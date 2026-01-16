@@ -118,6 +118,41 @@ Score ranges:
 - 40-59: High Risk, Not Ready
 - 0-39: Critical Risk, Immediate Action Required
 
+## ISO 27001/27002 Compliance Framework
+
+The platform includes comprehensive ISO 27001:2022 / ISO 27002:2022 compliance scoring:
+
+### ISO Control Themes (4 themes, 93 total controls)
+- **Organizational (A.5)**: 37 controls - policies, roles, asset management
+- **People (A.6)**: 8 controls - screening, training, termination
+- **Physical (A.7)**: 14 controls - security perimeters, equipment protection
+- **Technological (A.8)**: 34 controls - access control, cryptography, malware protection
+
+### Evidence Sources
+- **System Data**: Firewall, antivirus, encryption, user accounts
+- **Questionnaire**: Policy and procedure responses mapped to ISO controls
+- **Combined**: Controls evaluated using both sources
+
+### Maturity Levels
+- **OPTIMIZING** (90%+): Continuous improvement processes in place
+- **MANAGED** (75%+): Quantitative quality objectives achieved
+- **DEFINED** (60%+): Documented processes and standards
+- **DEVELOPING** (40%+): Basic processes established
+- **INITIAL** (<40%): Ad-hoc, reactive processes
+
+### Certification Readiness
+- **READY** (85%+, no non-compliant): Ready for ISO 27001 certification
+- **NEAR_READY** (70%+): Minor gaps to address
+- **NEEDS_WORK** (50%+): Significant improvements required
+- **NOT_READY** (<50%): Major remediation needed
+
+### UI Integration
+- ISO 27001 tab in audit detail modal
+- Theme score visualizations with progress bars
+- Control status summary (Compliant/Partial/Non-Compliant/N/A)
+- Individual control findings with recommendations
+- PDF export includes full ISO compliance section
+
 ## Demo Data
 
 The application includes seeded demo audits:

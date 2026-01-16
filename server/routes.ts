@@ -459,6 +459,70 @@ export async function registerRoutes(
       `).join('')}
     </div>
 
+    ${audit.aiScore!.isoCompliance ? `
+    <div class="section">
+      <div class="section-title">ISO 27001:2022 Compliance Assessment</div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+        <div class="category-item">
+          <div class="category-score" style="color: ${audit.aiScore!.isoCompliance.overallScore >= 80 ? '#22c55e' : audit.aiScore!.isoCompliance.overallScore >= 60 ? '#f59e0b' : '#ef4444'};">${audit.aiScore!.isoCompliance.overallScore}%</div>
+          <div class="category-name">Overall ISO Score</div>
+        </div>
+        <div class="category-item">
+          <div style="font-size: 18px; font-weight: 600; color: #f1f5f9;">${audit.aiScore!.isoCompliance.maturityLevel}</div>
+          <div class="category-name">Maturity Level</div>
+        </div>
+        <div class="category-item">
+          <div style="font-size: 18px; font-weight: 600; color: ${audit.aiScore!.isoCompliance.certificationReadiness === 'READY' ? '#22c55e' : audit.aiScore!.isoCompliance.certificationReadiness === 'NEAR_READY' ? '#06b6d4' : '#f59e0b'};">
+            ${audit.aiScore!.isoCompliance.certificationReadiness.replace('_', ' ')}
+          </div>
+          <div class="category-name">Certification Readiness</div>
+        </div>
+        <div class="category-item">
+          <div style="font-size: 18px; font-weight: 600; color: #f1f5f9;">${audit.aiScore!.isoCompliance.totalControls}</div>
+          <div class="category-name">Controls Evaluated</div>
+        </div>
+      </div>
+      <div style="margin-bottom: 24px;">
+        <h4 style="color: #f1f5f9; margin-bottom: 12px; font-size: 14px;">Theme Compliance</h4>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+          ${Object.entries(audit.aiScore!.isoCompliance.themeScores).map(([theme, score]) => {
+            const themeLabels: Record<string, string> = {
+              ORGANIZATIONAL: 'A.5 Organizational',
+              PEOPLE: 'A.6 People',
+              PHYSICAL: 'A.7 Physical',
+              TECHNOLOGICAL: 'A.8 Technological'
+            };
+            return `
+              <div class="category-item">
+                <div class="category-score" style="font-size: 24px; color: ${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'};">${score}%</div>
+                <div class="category-name">${themeLabels[theme]}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px;">
+        <div style="background: #22c55e20; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: #22c55e;">${audit.aiScore!.isoCompliance.compliantControls}</div>
+          <div style="font-size: 11px; color: #22c55e;">Compliant</div>
+        </div>
+        <div style="background: #f59e0b20; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">${audit.aiScore!.isoCompliance.partialControls}</div>
+          <div style="font-size: 11px; color: #f59e0b;">Partial</div>
+        </div>
+        <div style="background: #ef444420; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: #ef4444;">${audit.aiScore!.isoCompliance.nonCompliantControls}</div>
+          <div style="font-size: 11px; color: #ef4444;">Non-Compliant</div>
+        </div>
+        <div style="background: #64748b20; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: #64748b;">${audit.aiScore!.isoCompliance.notApplicableControls}</div>
+          <div style="font-size: 11px; color: #64748b;">N/A</div>
+        </div>
+      </div>
+      <p class="summary">${audit.aiScore!.isoCompliance.summary}</p>
+    </div>
+    ` : ''}
+
     <div class="section">
       <div class="section-title">AI Recommendations</div>
       ${audit.aiScore!.recommendations.map((rec, i) => `
