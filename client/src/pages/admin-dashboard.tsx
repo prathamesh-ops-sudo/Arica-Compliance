@@ -28,6 +28,7 @@ export default function AdminDashboard() {
 
   const { data: audits = [], isLoading, refetch } = useQuery<Audit[]>({
     queryKey: ["/api/audit/list"],
+    refetchInterval: 5000,
   });
 
   const unlockMutation = useMutation({

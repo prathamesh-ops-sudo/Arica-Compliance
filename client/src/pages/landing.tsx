@@ -51,21 +51,21 @@ export default function Landing() {
                 Project Sentinel uses advanced AI to audit your systems, assess compliance gaps, and deliver executive-ready reports in minutes—not months.
               </p>
 
-              <div className="flex items-center justify-center gap-4 flex-wrap">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <a href="/api/download/agent" download>
-                  <Button size="lg" className="h-14 px-8 text-lg" data-testid="button-download-agent">
+                  <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-lg" data-testid="button-download-agent">
                     <Download className="w-5 h-5 mr-2" />
                     Download Agent
                   </Button>
                 </a>
                 <Link href="/status">
-                  <Button size="lg" variant="outline" className="h-14 px-8 text-lg" data-testid="button-check-status">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-lg" data-testid="button-check-status">
                     Check Audit Status
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
                 <Link href="/admin">
-                  <Button size="lg" variant="ghost" className="h-14 px-8 text-lg" data-testid="button-admin">
+                  <Button size="lg" variant="ghost" className="w-full sm:w-auto h-14 px-8 text-lg" data-testid="button-admin">
                     Admin Dashboard
                   </Button>
                 </Link>
@@ -208,7 +208,7 @@ export default function Landing() {
                   </Button>
                 </Link>
               </div>
-              <div className="flex items-center justify-center gap-8 mt-10 text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 mt-10 text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Globe className="w-5 h-5" />
                   <span className="text-sm">Global Coverage</span>
@@ -229,12 +229,12 @@ export default function Landing() {
 
       <footer className="border-t border-border/50 py-8">
         <div className="container px-6">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Shield className="w-6 h-6 text-primary" />
               <span className="font-semibold text-foreground">Project Sentinel</span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground text-center sm:text-right">
               2024 Project Sentinel. All rights reserved.
             </p>
           </div>
