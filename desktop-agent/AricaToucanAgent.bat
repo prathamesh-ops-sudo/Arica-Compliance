@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ============================================
-echo   Project Sentinel - Desktop Agent Launcher
+echo   Arica Toucan - Desktop Agent Launcher
 echo ============================================
 echo.
 
@@ -53,13 +53,13 @@ echo.
 :: Get the directory where this batch file is located
 set "SCRIPT_DIR=%~dp0"
 
-:: Check if sentinel_agent.py exists in the same directory
-if exist "%SCRIPT_DIR%sentinel_agent.py" (
-    set "AGENT_PATH=%SCRIPT_DIR%sentinel_agent.py"
-) else if exist "%SCRIPT_DIR%SentinelAgent.py" (
-    set "AGENT_PATH=%SCRIPT_DIR%SentinelAgent.py"
+:: Check if arica_toucan_agent.py exists in the same directory
+if exist "%SCRIPT_DIR%arica_toucan_agent.py" (
+    set "AGENT_PATH=%SCRIPT_DIR%arica_toucan_agent.py"
+) else if exist "%SCRIPT_DIR%AricaToucanAgent.py" (
+    set "AGENT_PATH=%SCRIPT_DIR%AricaToucanAgent.py"
 ) else (
-    echo [ERROR] sentinel_agent.py not found in %SCRIPT_DIR%
+    echo [ERROR] arica_toucan_agent.py not found in %SCRIPT_DIR%
     echo Please ensure the Python script is in the same folder as this batch file.
     pause
     exit /b 1
@@ -75,7 +75,7 @@ if "%SERVER_URL%"=="" set "SERVER_URL=%DEFAULT_SERVER%"
 
 echo.
 echo ============================================
-echo   Starting Sentinel Agent
+echo   Starting Arica Toucan Agent
 echo   Server: %SERVER_URL%
 echo ============================================
 echo.

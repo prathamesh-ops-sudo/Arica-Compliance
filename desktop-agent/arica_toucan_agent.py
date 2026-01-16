@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
-Project Sentinel - Desktop Audit Agent
-=======================================
+Arica Toucan - Desktop Audit Agent
+===================================
 
 This script collects system information for compliance auditing.
 It gathers OS details, security status, and user access controls,
-then submits the data to the Project Sentinel API.
+then submits the data to the Arica Toucan API.
 
 Requirements:
     pip install requests psutil
 
 Usage:
-    python sentinel_agent.py --server https://your-sentinel-server.com
+    python arica_toucan_agent.py --server https://your-arica-toucan-server.com
 
 To build as EXE (Windows):
     pip install pyinstaller
-    pyinstaller --onefile --name SentinelAgent sentinel_agent.py
+    pyinstaller --onefile --name AricaToucanAgent arica_toucan_agent.py
 """
 
 import argparse

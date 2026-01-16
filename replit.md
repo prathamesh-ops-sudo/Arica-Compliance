@@ -1,10 +1,10 @@
-# Project Sentinel
+# Arica Toucan
 
 AI-Powered Compliance & Audit SaaS Platform
 
 ## Overview
 
-Project Sentinel is an enterprise-grade compliance and audit platform that:
+Arica Toucan is an enterprise-grade compliance and audit platform that:
 - Runs system audits via a desktop agent (EXE)
 - Generates unique Audit IDs
 - Locks results until payment/unlock
@@ -15,7 +15,7 @@ Project Sentinel is an enterprise-grade compliance and audit platform that:
 ## Architecture
 
 ```
-/project-sentinel
+/arica-toucan
 ├── /client                 # React frontend (Vite)
 │   └── /src
 │       ├── /components     # Reusable UI components
@@ -30,7 +30,7 @@ Project Sentinel is an enterprise-grade compliance and audit platform that:
 ├── /contracts             # API specification
 │   └── openapi.yaml       # OpenAPI 3.0 spec
 └── /desktop-agent         # Python desktop agent
-    └── sentinel_agent.py  # System data collector
+    └── arica_toucan_agent.py  # System data collector
 ```
 
 ## Tech Stack
@@ -96,13 +96,13 @@ npm run dev
 ```bash
 cd desktop-agent
 pip install requests psutil
-python sentinel_agent.py --server http://localhost:5000
+python arica_toucan_agent.py --server http://localhost:5000
 ```
 
 ### Building Desktop EXE
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --name SentinelAgent sentinel_agent.py
+pyinstaller --onefile --name AricaToucanAgent arica_toucan_agent.py
 ```
 
 ## AI Scoring Logic

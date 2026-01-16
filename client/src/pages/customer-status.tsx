@@ -309,7 +309,7 @@ function StatusResultCard({ status }: { status: AuditStatusResponse }) {
       <div className="px-8 py-4 bg-background/30 border-t border-border/50">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Need help? Contact us at <span className="text-primary">support@projectsentinel.com</span>
+            Need help? Contact us at <span className="text-primary">support@aricatoucan.com</span>
           </p>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-muted-foreground" />

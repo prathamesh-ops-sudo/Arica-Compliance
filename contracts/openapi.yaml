@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Project Sentinel API
+  title: Arica Toucan API
   description: |
     AI-Powered Compliance & Audit Platform API
     
@@ -8,11 +8,11 @@ info:
     All endpoints follow RESTful conventions and return JSON responses.
   version: 1.0.0
   contact:
-    name: Project Sentinel Support
-    email: support@projectsentinel.com
+    name: Arica Toucan Support
+    email: support@aricatoucan.com
 
 servers:
-  - url: https://api.projectsentinel.com
+  - url: https://api.aricatoucan.com
     description: Production server
   - url: http://localhost:5000
     description: Development server

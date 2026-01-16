@@ -32,7 +32,7 @@ export function Header({ isAdmin = false, onLogout, className }: HeaderProps) {
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-bold text-foreground tracking-tight">
-              Project Sentinel
+              Arica Toucan
             </span>
             <span className="text-xs text-muted-foreground">
               AI-Powered Compliance

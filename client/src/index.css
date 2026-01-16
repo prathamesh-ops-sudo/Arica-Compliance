@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE - Project Sentinel uses dark mode by default, but we define light for completeness */
+/* LIGHT MODE - Arica Toucan uses dark mode by default, but we define light for completeness */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -89,7 +89,7 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
-/* DARK MODE - Default theme for Project Sentinel */
+/* DARK MODE - Default theme for Arica Toucan */
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);

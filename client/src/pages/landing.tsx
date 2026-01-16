@@ -48,7 +48,7 @@ export default function Landing() {
               </h1>
 
               <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-                Project Sentinel uses advanced AI to audit your systems, assess compliance gaps, and deliver executive-ready reports in minutes—not months.
+                Arica Toucan uses advanced AI to audit your systems, assess compliance gaps, and deliver executive-ready reports in minutes—not months.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -198,7 +198,7 @@ export default function Landing() {
                 Ready to Get Compliant?
               </h2>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">
-                Join hundreds of organizations using Project Sentinel to streamline their compliance journey.
+                Join hundreds of organizations using Arica Toucan to streamline their compliance journey.
               </p>
               <div className="flex items-center justify-center gap-4 flex-wrap">
                 <Link href="/status">
@@ -232,10 +232,10 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Shield className="w-6 h-6 text-primary" />
-              <span className="font-semibold text-foreground">Project Sentinel</span>
+              <span className="font-semibold text-foreground">Arica Toucan</span>
             </div>
             <p className="text-sm text-muted-foreground text-center sm:text-right">
-              2024 Project Sentinel. All rights reserved.
+              2024 Arica Toucan. All rights reserved.
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-# Project Sentinel Desktop Audit Agent
+# Arica Toucan Desktop Audit Agent
 
 A lightweight Python-based desktop agent that collects system security information for compliance auditing.
 
@@ -22,13 +22,13 @@ pip install requests psutil
 ### Basic Usage
 
 ```bash
-python sentinel_agent.py --server https://your-sentinel-server.com
+python arica_toucan_agent.py --server https://your-arica-toucan-server.com
 ```
 
 ### Dry Run (Testing)
 
 ```bash
-python sentinel_agent.py --server https://example.com --dry-run
+python arica_toucan_agent.py --server https://example.com --dry-run
 ```
 
 This will collect and display system data without uploading.
@@ -42,7 +42,7 @@ pip install pyinstaller
 
 2. Build the executable:
 ```bash
-pyinstaller --onefile --name SentinelAgent sentinel_agent.py
+pyinstaller --onefile --name AricaToucanAgent arica_toucan_agent.py
 ```
 
 3. The EXE will be created in the `dist/` folder.
@@ -51,12 +51,12 @@ pyinstaller --onefile --name SentinelAgent sentinel_agent.py
 
 For a cleaner EXE without console window (GUI mode):
 ```bash
-pyinstaller --onefile --noconsole --name SentinelAgent sentinel_agent.py
+pyinstaller --onefile --noconsole --name AricaToucanAgent arica_toucan_agent.py
 ```
 
 With custom icon:
 ```bash
-pyinstaller --onefile --icon=sentinel.ico --name SentinelAgent sentinel_agent.py
+pyinstaller --onefile --icon=aricatoucan.ico --name AricaToucanAgent arica_toucan_agent.py
 ```
 
 ## Data Collected
@@ -106,4 +106,4 @@ The agent collects the following information:
 
 ## License
 
-Copyright © 2024 Project Sentinel. All rights reserved.
+Copyright 2024 Arica Toucan. All rights reserved.
