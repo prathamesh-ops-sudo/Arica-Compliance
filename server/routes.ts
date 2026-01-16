@@ -555,18 +555,31 @@ export async function registerRoutes(
     try {
       const fs = await import("fs");
       const path = await import("path");
+      const archiver = await import("archiver");
       
       const agentPath = path.join(process.cwd(), "desktop-agent", "sentinel_agent.py");
+      const batPath = path.join(process.cwd(), "desktop-agent", "SentinelAgent.bat");
+      const readmePath = path.join(process.cwd(), "desktop-agent", "README.md");
       
       if (!fs.existsSync(agentPath)) {
         return res.status(404).json({ error: "Agent file not found" });
       }
       
-      const fileContent = fs.readFileSync(agentPath, "utf-8");
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename="SentinelAgent.zip"');
       
-      res.setHeader('Content-Type', 'application/octet-stream');
-      res.setHeader('Content-Disposition', 'attachment; filename="SentinelAgent.py"');
-      res.send(fileContent);
+      const archive = archiver.default('zip', { zlib: { level: 9 } });
+      archive.pipe(res);
+      
+      archive.file(agentPath, { name: 'sentinel_agent.py' });
+      if (fs.existsSync(batPath)) {
+        archive.file(batPath, { name: 'SentinelAgent.bat' });
+      }
+      if (fs.existsSync(readmePath)) {
+        archive.file(readmePath, { name: 'README.md' });
+      }
+      
+      await archive.finalize();
     } catch (error) {
       console.error("Error downloading agent:", error);
       res.status(500).json({ error: "Failed to download agent" });
