@@ -91,6 +91,29 @@ The agent collects the following information:
 
 ## Troubleshooting
 
+### Windows Smart App Control Blocking the Batch File
+
+If Windows Smart App Control blocks `AricaToucanAgent.bat`, follow these steps:
+
+**Option 1: Unblock the File (Recommended)**
+1. Right-click on `AricaToucanAgent.bat`
+2. Select **Properties**
+3. At the bottom of the **General** tab, check the **Unblock** checkbox
+4. Click **OK**
+
+**Option 2: Run Python Directly**
+Instead of using the batch file, open Command Prompt and run:
+```cmd
+cd path\to\AricaToucanAgent
+python -m pip install requests psutil
+python arica_toucan_agent.py --server https://your-server-url.com
+```
+
+**Option 3: Use PowerShell**
+```powershell
+Unblock-File -Path "C:\path\to\AricaToucanAgent.bat"
+```
+
 ### "Failed to create audit"
 - Check your internet connection
 - Verify the server URL is correct
