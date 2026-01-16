@@ -3,7 +3,7 @@ runtime: nodejs20
 build:
   commands:
     pre-build:
-      - npm ci
+      - npm install
     build:
       - npm run build
 run:
