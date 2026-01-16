@@ -75,7 +75,7 @@ export default function Landing() {
         </section>
 
         <section className="container py-20 px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
               {
                 icon: Shield,
@@ -102,8 +102,8 @@ export default function Landing() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: feature.delay + 0.4 }}
               >
-                <GlassCard hover className="h-full">
-                  <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/20 mb-6">
+                <GlassCard hover className="h-full text-center">
+                  <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/20 mb-6 mx-auto">
                     <feature.icon className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground mb-3">

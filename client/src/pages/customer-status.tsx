@@ -200,7 +200,7 @@ function StatusResultCard({ status }: { status: AuditStatusResponse }) {
       className="overflow-hidden"
     >
       <div className="p-8">
-        <div className="flex items-start justify-between gap-6 mb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8 text-center">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Audit ID</p>
             <p className="text-2xl font-mono font-bold text-foreground">
@@ -210,7 +210,7 @@ function StatusResultCard({ status }: { status: AuditStatusResponse }) {
           <StatusBadge status={status.status} size="lg" />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 text-center">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Created</p>
             <p className="text-foreground font-medium">
@@ -307,7 +307,7 @@ function StatusResultCard({ status }: { status: AuditStatusResponse }) {
       </div>
 
       <div className="px-8 py-4 bg-background/30 border-t border-border/50">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
           <p className="text-sm text-muted-foreground">
             Need help? Contact us at <span className="text-primary">support@projectsentinel.com</span>
           </p>

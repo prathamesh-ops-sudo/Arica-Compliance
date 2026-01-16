@@ -20,18 +20,31 @@ if %errorlevel% neq 0 (
 
 echo [OK] Python found.
 
-:: Check for required packages
+:: Check for required packages using python -m pip (more reliable than pip alone)
 echo [INFO] Checking dependencies...
-pip show requests >nul 2>&1
+
+python -m pip show requests >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Installing requests package...
-    pip install requests
+    python -m pip install requests
+    if %errorlevel% neq 0 (
+        echo [ERROR] Failed to install requests package.
+        echo Please try running: python -m pip install requests
+        pause
+        exit /b 1
+    )
 )
 
-pip show psutil >nul 2>&1
+python -m pip show psutil >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Installing psutil package...
-    pip install psutil
+    python -m pip install psutil
+    if %errorlevel% neq 0 (
+        echo [ERROR] Failed to install psutil package.
+        echo Please try running: python -m pip install psutil
+        pause
+        exit /b 1
+    )
 )
 
 echo [OK] Dependencies installed.
