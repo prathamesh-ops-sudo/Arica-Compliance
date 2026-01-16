@@ -484,6 +484,16 @@ def main():
         action="store_true",
         help="Collect data without uploading (for testing)"
     )
+    parser.add_argument(
+        "--questionnaire",
+        action="store_true",
+        help="Launch GUI questionnaire after system data collection"
+    )
+    parser.add_argument(
+        "--scan-only",
+        action="store_true",
+        help="Run system scan only without questionnaire"
+    )
     
     args = parser.parse_args()
     server_url = args.server.rstrip("/")
@@ -526,14 +536,62 @@ def main():
     success = upload_system_data(server_url, audit_id, system_data)
     
     if success:
-        print("\n" + "=" * 60)
-        print("\n  AUDIT COMPLETED SUCCESSFULLY!")
-        print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
-        print("\n  IMPORTANT: Save this ID!")
-        print("  You will need it to access your compliance report.")
-        print("\n  Contact the provider to unlock your report")
-        print("  and receive your AI-powered compliance analysis.")
-        print("\n" + "=" * 60)
+        print("\n[*] System data uploaded successfully!")
+        
+        # Launch questionnaire GUI if requested
+        if args.questionnaire:
+            print("\n[*] Launching compliance questionnaire...")
+            print("    Please complete the questionnaire in the GUI window.")
+            
+            try:
+                from questionnaire import launch_questionnaire
+                questionnaire_success = launch_questionnaire(audit_id, server_url)
+                
+                if questionnaire_success:
+                    print("\n" + "=" * 60)
+                    print("\n  FULL AUDIT COMPLETED SUCCESSFULLY!")
+                    print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
+                    print("\n  IMPORTANT: Save this ID!")
+                    print("  You will need it to access your compliance report.")
+                    print("\n  Both system data and questionnaire have been submitted.")
+                    print("\n  Contact the provider to unlock your report")
+                    print("  and receive your AI-powered compliance analysis.")
+                    print("\n" + "=" * 60)
+                else:
+                    print("\n" + "=" * 60)
+                    print("\n  SYSTEM SCAN COMPLETED - QUESTIONNAIRE SKIPPED")
+                    print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
+                    print("\n  System data was uploaded, but questionnaire was cancelled.")
+                    print("  You can run the agent again with --questionnaire to complete it.")
+                    print("\n" + "=" * 60)
+            except ImportError:
+                print("\n[!] Could not load questionnaire module.")
+                print("    Make sure questionnaire.py is in the same directory.")
+                print("\n" + "=" * 60)
+                print("\n  SYSTEM SCAN COMPLETED")
+                print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
+                print("\n" + "=" * 60)
+            except Exception as e:
+                print(f"\n[!] Error launching questionnaire: {e}")
+                print("\n" + "=" * 60)
+                print("\n  SYSTEM SCAN COMPLETED")
+                print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
+                print("\n" + "=" * 60)
+        else:
+            # System scan only mode
+            print("\n" + "=" * 60)
+            print("\n  SYSTEM SCAN COMPLETED SUCCESSFULLY!")
+            print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
+            print("\n  IMPORTANT: Save this ID!")
+            print("  You will need it to access your compliance report.")
+            
+            if not args.scan_only:
+                print("\n  TIP: Run with --questionnaire flag to also complete")
+                print("       the compliance questionnaire for a full audit.")
+            
+            print("\n  Contact the provider to unlock your report")
+            print("  and receive your AI-powered compliance analysis.")
+            print("\n" + "=" * 60)
     else:
         print("\n[!] Failed to upload system data.")
         print("    Please contact support with your Audit ID.")
