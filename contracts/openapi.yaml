@@ -1,0 +1,621 @@
+openapi: 3.0.3
+info:
+  title: Project Sentinel API
+  description: |
+    AI-Powered Compliance & Audit Platform API
+    
+    This API enables the complete audit lifecycle from creation to PDF report export.
+    All endpoints follow RESTful conventions and return JSON responses.
+  version: 1.0.0
+  contact:
+    name: Project Sentinel Support
+    email: support@projectsentinel.com
+
+servers:
+  - url: https://api.projectsentinel.com
+    description: Production server
+  - url: http://localhost:5000
+    description: Development server
+
+tags:
+  - name: Audit Lifecycle
+    description: Core audit operations
+  - name: Reports
+    description: Report generation and export
+
+paths:
+  /api/audit/create:
+    post:
+      tags:
+        - Audit Lifecycle
+      summary: Create a new audit
+      description: Creates a new audit record and returns a unique Audit ID
+      operationId: createAudit
+      responses:
+        '200':
+          description: Audit created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAuditResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/audit/list:
+    get:
+      tags:
+        - Audit Lifecycle
+      summary: List all audits
+      description: Returns all audits (admin only)
+      operationId: listAudits
+      responses:
+        '200':
+          description: List of audits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Audit'
+
+  /api/audit/status/{auditId}:
+    get:
+      tags:
+        - Audit Lifecycle
+      summary: Get audit status
+      description: Returns the current status of an audit
+      operationId: getAuditStatus
+      parameters:
+        - name: auditId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditStatusResponse'
+        '404':
+          description: Audit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/audit/upload-system-data:
+    post:
+      tags:
+        - Audit Lifecycle
+      summary: Upload system data
+      description: Upload system data collected by the desktop agent
+      operationId: uploadSystemData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadSystemDataRequest'
+      responses:
+        '200':
+          description: System data uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Audit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/audit/submit-questionnaire:
+    post:
+      tags:
+        - Audit Lifecycle
+      summary: Submit questionnaire
+      description: Submit compliance questionnaire answers
+      operationId: submitQuestionnaire
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitQuestionnaireRequest'
+      responses:
+        '200':
+          description: Questionnaire submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Audit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/audit/unlock:
+    post:
+      tags:
+        - Audit Lifecycle
+      summary: Unlock audit
+      description: Unlock an audit after payment (admin only)
+      operationId: unlockAudit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnlockAuditRequest'
+      responses:
+        '200':
+          description: Audit unlocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '404':
+          description: Audit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/audit/run-ai-score:
+    post:
+      tags:
+        - Audit Lifecycle
+      summary: Run AI scoring
+      description: Trigger AI analysis to generate compliance score
+      operationId: runAIScore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - auditId
+              properties:
+                auditId:
+                  type: string
+      responses:
+        '200':
+          description: AI scoring completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIScoreResponse'
+        '404':
+          description: Audit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/audit/report/{auditId}:
+    get:
+      tags:
+        - Reports
+      summary: Get audit report
+      description: Get full audit report (requires unlocked status)
+      operationId: getAuditReport
+      parameters:
+        - name: auditId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Full audit report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Audit'
+        '403':
+          description: Report is locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Audit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/audit/export/pdf/{auditId}:
+    get:
+      tags:
+        - Reports
+      summary: Export PDF report
+      description: Export audit report as PDF
+      operationId: exportPDF
+      parameters:
+        - name: auditId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PDF report
+          content:
+            text/html:
+              schema:
+                type: string
+        '403':
+          description: Report not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Audit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    AuditStatus:
+      type: string
+      enum:
+        - CREATED
+        - LOCKED
+        - PAID
+        - AI_PROCESSED
+        - REPORT_READY
+
+    RiskLevel:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+
+    AuditReadiness:
+      type: string
+      enum:
+        - READY
+        - NEEDS_IMPROVEMENT
+        - NOT_READY
+
+    QuestionnaireCategory:
+      type: string
+      enum:
+        - ACCESS_CONTROL
+        - ASSET_MANAGEMENT
+        - RISK_MANAGEMENT
+        - INCIDENT_RESPONSE
+        - BUSINESS_CONTINUITY
+
+    AnswerType:
+      type: string
+      enum:
+        - YES
+        - NO
+        - PARTIAL
+        - NA
+
+    SystemData:
+      type: object
+      required:
+        - osName
+        - osVersion
+        - osPlatform
+        - firewallEnabled
+        - firewallStatus
+        - antivirusInstalled
+        - antivirusStatus
+        - diskEncryptionEnabled
+        - userAccounts
+        - collectedAt
+      properties:
+        osName:
+          type: string
+        osVersion:
+          type: string
+        osPlatform:
+          type: string
+        firewallEnabled:
+          type: boolean
+        firewallStatus:
+          type: string
+        antivirusInstalled:
+          type: boolean
+        antivirusName:
+          type: string
+        antivirusStatus:
+          type: string
+        diskEncryptionEnabled:
+          type: boolean
+        diskEncryptionMethod:
+          type: string
+        userAccounts:
+          type: array
+          items:
+            type: object
+            properties:
+              username:
+                type: string
+              isAdmin:
+                type: boolean
+              lastLogin:
+                type: string
+        networkInfo:
+          type: object
+          properties:
+            hostname:
+              type: string
+            ipAddresses:
+              type: array
+              items:
+                type: string
+        collectedAt:
+          type: string
+          format: date-time
+
+    QuestionnaireAnswer:
+      type: object
+      required:
+        - questionId
+        - category
+        - question
+        - answer
+      properties:
+        questionId:
+          type: string
+        category:
+          $ref: '#/components/schemas/QuestionnaireCategory'
+        question:
+          type: string
+        answer:
+          $ref: '#/components/schemas/AnswerType'
+        notes:
+          type: string
+
+    QuestionnaireSubmission:
+      type: object
+      required:
+        - answers
+        - submittedAt
+      properties:
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionnaireAnswer'
+        submittedAt:
+          type: string
+          format: date-time
+
+    ControlGap:
+      type: object
+      required:
+        - category
+        - controlName
+        - severity
+        - description
+        - recommendation
+      properties:
+        category:
+          $ref: '#/components/schemas/QuestionnaireCategory'
+        controlName:
+          type: string
+        severity:
+          $ref: '#/components/schemas/RiskLevel'
+        description:
+          type: string
+        recommendation:
+          type: string
+
+    AIScoreResult:
+      type: object
+      required:
+        - complianceScore
+        - riskLevel
+        - auditReadiness
+        - categoryScores
+        - controlGaps
+        - recommendations
+        - summary
+        - scoredAt
+      properties:
+        complianceScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        riskLevel:
+          $ref: '#/components/schemas/RiskLevel'
+        auditReadiness:
+          $ref: '#/components/schemas/AuditReadiness'
+        categoryScores:
+          type: object
+          additionalProperties:
+            type: integer
+        controlGaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ControlGap'
+        recommendations:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+        scoredAt:
+          type: string
+          format: date-time
+
+    Audit:
+      type: object
+      required:
+        - id
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        status:
+          $ref: '#/components/schemas/AuditStatus'
+        systemData:
+          $ref: '#/components/schemas/SystemData'
+        questionnaire:
+          $ref: '#/components/schemas/QuestionnaireSubmission'
+        aiScore:
+          $ref: '#/components/schemas/AIScoreResult'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        unlockedAt:
+          type: string
+          format: date-time
+        paidAmount:
+          type: number
+        paymentReference:
+          type: string
+
+    CreateAuditResponse:
+      type: object
+      required:
+        - auditId
+        - status
+        - message
+      properties:
+        auditId:
+          type: string
+        status:
+          $ref: '#/components/schemas/AuditStatus'
+        message:
+          type: string
+
+    AuditStatusResponse:
+      type: object
+      required:
+        - auditId
+        - status
+        - createdAt
+        - updatedAt
+        - hasSystemData
+        - hasQuestionnaire
+        - isUnlocked
+      properties:
+        auditId:
+          type: string
+        status:
+          $ref: '#/components/schemas/AuditStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        hasSystemData:
+          type: boolean
+        hasQuestionnaire:
+          type: boolean
+        isUnlocked:
+          type: boolean
+
+    UploadSystemDataRequest:
+      type: object
+      required:
+        - auditId
+        - systemData
+      properties:
+        auditId:
+          type: string
+        systemData:
+          $ref: '#/components/schemas/SystemData'
+
+    SubmitQuestionnaireRequest:
+      type: object
+      required:
+        - auditId
+        - questionnaire
+      properties:
+        auditId:
+          type: string
+        questionnaire:
+          $ref: '#/components/schemas/QuestionnaireSubmission'
+
+    UnlockAuditRequest:
+      type: object
+      required:
+        - auditId
+      properties:
+        auditId:
+          type: string
+        paymentReference:
+          type: string
+        paidAmount:
+          type: number
+
+    AIScoreResponse:
+      type: object
+      properties:
+        auditId:
+          type: string
+        status:
+          $ref: '#/components/schemas/AuditStatus'
+        complianceScore:
+          type: integer
+        riskLevel:
+          $ref: '#/components/schemas/RiskLevel'
+        auditReadiness:
+          $ref: '#/components/schemas/AuditReadiness'
+        message:
+          type: string
+
+    GenericResponse:
+      type: object
+      properties:
+        auditId:
+          type: string
+        status:
+          $ref: '#/components/schemas/AuditStatus'
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
