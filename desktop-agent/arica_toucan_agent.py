@@ -225,9 +225,16 @@ def check_disk_encryption() -> Dict[str, Any]:
 
 
 def get_user_accounts() -> List[Dict[str, Any]]:
-    """Get list of user accounts."""
+    """Get list of user accounts (excludes built-in system accounts)."""
     users = []
     system = platform.system().lower()
+    
+    # Built-in Windows accounts to exclude
+    WINDOWS_SYSTEM_ACCOUNTS = {
+        'administrator', 'defaultaccount', 'guest', 'wdagutilityaccount',
+        'defaultuser0', 'system', 'local service', 'network service',
+        'krbtgt', 'defaultapppool'
+    }
     
     if system == "windows":
         try:
@@ -237,21 +244,29 @@ def get_user_accounts() -> List[Dict[str, Any]]:
                 timeout=10
             ).decode()
             lines = output.split('\n')
+            
+            # Get list of admins for reference
+            admin_list = set()
+            try:
+                admin_output = subprocess.check_output(
+                    ["net", "localgroup", "Administrators"],
+                    stderr=subprocess.DEVNULL,
+                    timeout=10
+                ).decode()
+                for admin_line in admin_output.split('\n'):
+                    admin_line = admin_line.strip()
+                    if admin_line and not admin_line.startswith('-') and not admin_line.startswith('Alias') and not admin_line.startswith('Members') and not admin_line.startswith('Comment') and not admin_line.startswith('The'):
+                        admin_list.add(admin_line.lower())
+            except Exception:
+                pass
+            
             for line in lines:
                 if line.strip() and not line.startswith('-') and not line.startswith('User') and not line.startswith('The'):
                     for username in line.split():
-                        if username.strip():
-                            is_admin = False
-                            try:
-                                admin_output = subprocess.check_output(
-                                    ["net", "localgroup", "Administrators"],
-                                    stderr=subprocess.DEVNULL,
-                                    timeout=10
-                                ).decode()
-                                is_admin = username in admin_output
-                            except Exception:
-                                pass
-                            
+                        username = username.strip()
+                        # Skip empty and system accounts
+                        if username and username.lower() not in WINDOWS_SYSTEM_ACCOUNTS:
+                            is_admin = username.lower() in admin_list
                             users.append({
                                 "username": username,
                                 "isAdmin": is_admin,
