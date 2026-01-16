@@ -551,5 +551,27 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/download/agent", async (req, res) => {
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      
+      const agentPath = path.join(process.cwd(), "desktop-agent", "sentinel_agent.py");
+      
+      if (!fs.existsSync(agentPath)) {
+        return res.status(404).json({ error: "Agent file not found" });
+      }
+      
+      const fileContent = fs.readFileSync(agentPath, "utf-8");
+      
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', 'attachment; filename="SentinelAgent.py"');
+      res.send(fileContent);
+    } catch (error) {
+      console.error("Error downloading agent:", error);
+      res.status(500).json({ error: "Failed to download agent" });
+    }
+  });
+
   return httpServer;
 }

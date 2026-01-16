@@ -11,6 +11,7 @@ import {
   Zap,
   Globe,
   Users,
+  Download,
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { GlassCard } from "@/components/glass-card";
@@ -51,14 +52,20 @@ export default function Landing() {
               </p>
 
               <div className="flex items-center justify-center gap-4 flex-wrap">
+                <a href="/api/download/agent" download>
+                  <Button size="lg" className="h-14 px-8 text-lg" data-testid="button-download-agent">
+                    <Download className="w-5 h-5 mr-2" />
+                    Download Agent
+                  </Button>
+                </a>
                 <Link href="/status">
-                  <Button size="lg" className="h-14 px-8 text-lg" data-testid="button-check-status">
+                  <Button size="lg" variant="outline" className="h-14 px-8 text-lg" data-testid="button-check-status">
                     Check Audit Status
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
                 <Link href="/admin">
-                  <Button size="lg" variant="outline" className="h-14 px-8 text-lg" data-testid="button-admin">
+                  <Button size="lg" variant="ghost" className="h-14 px-8 text-lg" data-testid="button-admin">
                     Admin Dashboard
                   </Button>
                 </Link>
