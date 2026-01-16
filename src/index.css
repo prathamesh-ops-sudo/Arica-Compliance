@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* AricaInsights Design System - Light Mode */
+    --background: 210 40% 98%;
+    --foreground: 220 14% 30%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 220 14% 30%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 14% 30%;
+    
+    /* Primary - Deep Blue #0056D2 */
+    --primary: 214 100% 41%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary - Slate #4A5568 */
+    --secondary: 220 14% 35%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 210 40% 96%;
+    --muted-foreground: 220 14% 46%;
+    
+    --accent: 214 100% 95%;
+    --accent-foreground: 214 100% 41%;
+    
+    /* Destructive - Negative #DC3545 */
+    --destructive: 354 70% 54%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Sentiment Colors */
+    --positive: 142 71% 45%;
+    --positive-foreground: 0 0% 100%;
+    --negative: 354 70% 54%;
+    --negative-foreground: 0 0% 100%;
+    --neutral: 45 93% 58%;
+    --neutral-foreground: 220 14% 20%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 214 100% 41%;
+    
+    --radius: 0.5rem;
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 14% 30%;
+    --sidebar-primary: 214 100% 41%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 100% 97%;
+    --sidebar-accent-foreground: 214 100% 41%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 214 100% 41%;
+    
+    /* Gradients */
+    --gradient-start: 214 100% 41%;
+    --gradient-end: 220 90% 56%;
+    
+    /* Chart Colors */
+    --chart-1: 214 100% 41%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 354 70% 54%;
+    --chart-4: 45 93% 58%;
+    --chart-5: 280 65% 60%;
+  }
+
+  .dark {
+    /* AricaInsights Design System - Dark Mode */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    
+    --card: 222 47% 14%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 222 47% 14%;
+    --popover-foreground: 210 40% 98%;
+    
+    --primary: 214 100% 59%;
+    --primary-foreground: 222 47% 11%;
+    
+    --secondary: 217 33% 25%;
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 217 33% 20%;
+    --accent-foreground: 214 100% 70%;
+    
+    --destructive: 354 70% 45%;
+    --destructive-foreground: 210 40% 98%;
+    
+    /* Sentiment Colors - Dark */
+    --positive: 142 71% 50%;
+    --positive-foreground: 0 0% 100%;
+    --negative: 354 70% 55%;
+    --negative-foreground: 0 0% 100%;
+    --neutral: 45 93% 55%;
+    --neutral-foreground: 222 47% 11%;
+    
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 214 100% 59%;
+    
+    /* Sidebar - Dark */
+    --sidebar-background: 222 47% 9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 214 100% 59%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 214 100% 70%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 214 100% 59%;
+    
+    /* Gradients - Dark */
+    --gradient-start: 214 100% 50%;
+    --gradient-end: 220 90% 65%;
+    
+    /* Chart Colors - Dark */
+    --chart-1: 214 100% 59%;
+    --chart-2: 142 71% 50%;
+    --chart-3: 354 70% 55%;
+    --chart-4: 45 93% 55%;
+    --chart-5: 280 65% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .glass {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  }
+  
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.1);
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .hover-lift:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 10px 40px -10px hsl(var(--primary) / 0.3);
+  }
+}

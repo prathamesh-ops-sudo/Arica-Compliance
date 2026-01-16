@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>AricaInsights – Media Intelligence Platform</title>
+    <meta name="title" content="AricaInsights – Media Intelligence Platform" />
+    <meta name="description" content="Real-time media monitoring and sentiment analysis. Track brand mentions, analyze trends, and generate executive reports with AricaInsights." />
+    <meta name="keywords" content="media monitoring, sentiment analysis, brand tracking, media intelligence, social listening, PR analytics" />
+    <meta name="author" content="AricaInsights" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0056D2" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="AricaInsights" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aricainsights.com/" />
+    <meta property="og:title" content="AricaInsights – Media Intelligence Platform" />
+    <meta property="og:description" content="Real-time media monitoring and sentiment analysis. Track brand mentions, analyze trends, and generate executive reports." />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:site_name" content="AricaInsights" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://aricainsights.com/" />
+    <meta name="twitter:title" content="AricaInsights – Media Intelligence Platform" />
+    <meta name="twitter:description" content="Real-time media monitoring and sentiment analysis. Track brand mentions, analyze trends, and generate executive reports." />
+    <meta name="twitter:image" content="/og-image.png" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://aricainsights.com/" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "AricaInsights",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Real-time media monitoring and sentiment analysis platform for brand tracking and PR analytics.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Fallback for JavaScript disabled -->
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: system-ui, sans-serif;">
+        <h1>AricaInsights</h1>
+        <p>Please enable JavaScript to use this application.</p>
+      </div>
+    </noscript>
+    
+    <!-- App Root -->
+    <div id="root"></div>
+    
+    <!-- Main Application Script -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
