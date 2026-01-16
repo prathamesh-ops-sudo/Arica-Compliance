@@ -12,6 +12,11 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Health check endpoint for App Runner
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "healthy", timestamp: new Date().toISOString() });
+  });
+
   app.post("/api/audit/create", async (req, res) => {
     try {
       const audit = await storage.createAudit();
