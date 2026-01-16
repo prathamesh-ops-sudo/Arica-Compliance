@@ -351,20 +351,64 @@ def collect_system_data() -> Dict[str, Any]:
     }
 
 
-def create_audit(server_url: str) -> Optional[str]:
-    """Create a new audit on the server."""
+def test_connectivity(server_url: str) -> bool:
+    """Test if we can reach the server."""
+    import urllib.parse
+    parsed = urllib.parse.urlparse(server_url)
+    hostname = parsed.hostname
+    port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+    
+    print(f"[*] Testing connectivity to {hostname}...")
+    
+    # First try DNS resolution
     try:
-        response = requests.post(
-            f"{server_url}/api/audit/create",
-            headers={"Content-Type": "application/json"},
-            timeout=30
-        )
-        response.raise_for_status()
-        data = response.json()
-        return data.get("auditId")
+        socket.setdefaulttimeout(10)
+        ip = socket.gethostbyname(hostname)
+        print(f"    DNS resolved: {hostname} -> {ip}")
+    except socket.gaierror as e:
+        print(f"\n[!] DNS resolution failed for {hostname}")
+        print("    Possible causes:")
+        print("    - No internet connection")
+        print("    - Server hostname is incorrect")
+        print("    - DNS server issues")
+        print("\n    Try these fixes:")
+        print("    1. Check your internet connection")
+        print("    2. Try: ipconfig /flushdns (in Command Prompt as Admin)")
+        print("    3. Try using a different DNS (e.g., 8.8.8.8)")
+        return False
     except Exception as e:
-        print(f"\n[!] Failed to create audit: {e}")
-        return None
+        print(f"\n[!] Connection test failed: {e}")
+        return False
+    
+    return True
+
+
+def create_audit(server_url: str, max_retries: int = 3) -> Optional[str]:
+    """Create a new audit on the server with retry logic."""
+    import time
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                f"{server_url}/api/audit/create",
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("auditId")
+        except requests.exceptions.ConnectionError as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                print(f"\n[!] Connection failed, retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+            else:
+                print(f"\n[!] Failed to connect after {max_retries} attempts: {e}")
+                return None
+        except Exception as e:
+            print(f"\n[!] Failed to create audit: {e}")
+            return None
+    return None
 
 
 def upload_system_data(server_url: str, audit_id: str, system_data: Dict[str, Any]) -> bool:
@@ -391,19 +435,19 @@ def print_banner():
     banner = """
     ╔═══════════════════════════════════════════════════════════════╗
     ║                                                               ║
-    ║     ██████╗ ██████╗  ██████╗      ██╗███████╗ ██████╗████████╗ ║
-    ║     ██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝██╔════╝╚══██╔══╝ ║
-    ║     ██████╔╝██████╔╝██║   ██║     ██║█████╗  ██║        ██║    ║
-    ║     ██╔═══╝ ██╔══██╗██║   ██║██   ██║██╔══╝  ██║        ██║    ║
-    ║     ██║     ██║  ██║╚██████╔╝╚█████╔╝███████╗╚██████╗   ██║    ║
-    ║     ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚══════╝ ╚═════╝   ╚═╝    ║
+    ║      █████╗ ██████╗ ██╗ ██████╗ █████╗                        ║
+    ║     ██╔══██╗██╔══██╗██║██╔════╝██╔══██╗                       ║
+    ║     ███████║██████╔╝██║██║     ███████║                       ║
+    ║     ██╔══██║██╔══██╗██║██║     ██╔══██║                       ║
+    ║     ██║  ██║██║  ██║██║╚██████╗██║  ██║                       ║
+    ║     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝ ╚═════╝╚═╝  ╚═╝                       ║
     ║                                                               ║
-    ║              ███████╗███████╗███╗   ██╗████████╗██╗███╗   ██╗ ║
-    ║              ██╔════╝██╔════╝████╗  ██║╚══██╔══╝██║████╗  ██║ ║
-    ║              ███████╗█████╗  ██╔██╗ ██║   ██║   ██║██╔██╗ ██║ ║
-    ║              ╚════██║██╔══╝  ██║╚██╗██║   ██║   ██║██║╚██╗██║ ║
-    ║              ███████║███████╗██║ ╚████║   ██║   ██║██║ ╚████║ ║
-    ║              ╚══════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚═╝  ╚═══╝ ║
+    ║     ████████╗ ██████╗ ██╗   ██╗ ██████╗ █████╗ ███╗   ██╗     ║
+    ║     ╚══██╔══╝██╔═══██╗██║   ██║██╔════╝██╔══██╗████╗  ██║     ║
+    ║        ██║   ██║   ██║██║   ██║██║     ███████║██╔██╗ ██║     ║
+    ║        ██║   ██║   ██║██║   ██║██║     ██╔══██║██║╚██╗██║     ║
+    ║        ██║   ╚██████╔╝╚██████╔╝╚██████╗██║  ██║██║ ╚████║     ║
+    ║        ╚═╝    ╚═════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝     ║
     ║                                                               ║
     ║           AI-Powered Compliance & Audit Platform              ║
     ║                     Desktop Audit Agent                       ║
@@ -415,12 +459,12 @@ def print_banner():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Project Sentinel Desktop Audit Agent"
+        description="Arica Toucan Desktop Audit Agent"
     )
     parser.add_argument(
         "--server",
         required=True,
-        help="Server URL (e.g., https://your-sentinel-server.com)"
+        help="Server URL (e.g., https://your-arica-toucan-server.com)"
     )
     parser.add_argument(
         "--dry-run",
@@ -449,6 +493,11 @@ def main():
         return
     
     print(f"\n[*] Connecting to server: {server_url}")
+    
+    # Test connectivity before attempting API calls
+    if not test_connectivity(server_url):
+        input("\nPress Enter to exit...")
+        sys.exit(1)
     
     print("[*] Creating audit record...")
     audit_id = create_audit(server_url)
