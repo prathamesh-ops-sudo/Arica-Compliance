@@ -1,0 +1,58 @@
+name: Deploy to AWS App Runner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: project-sentinel
+  APP_RUNNER_SERVICE: project-sentinel
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy to App Runner
+        id: deploy-apprunner
+        uses: awslabs/amazon-app-runner-deploy@main
+        with:
+          service: ${{ env.APP_RUNNER_SERVICE }}
+          image: ${{ steps.build-image.outputs.image }}
+          access-role-arn: ${{ secrets.APP_RUNNER_ROLE_ARN }}
+          region: ${{ env.AWS_REGION }}
+          cpu: 1
+          memory: 2
+          port: 8080
+          wait-for-service-stability-seconds: 600
+
+      - name: Output App Runner URL
+        run: echo "App deployed to ${{ steps.deploy-apprunner.outputs.service-url }}"
