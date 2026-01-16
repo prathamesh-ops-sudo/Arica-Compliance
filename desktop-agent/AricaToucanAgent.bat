@@ -1,20 +1,31 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: Get the ANSI escape character
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+
 :: Enable ANSI colors for Windows 10+
 for /F "tokens=4-5 delims=. " %%i in ('ver') do set VERSION=%%i.%%j
 if "%VERSION%" GEQ "10.0" (
     reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul 2>&1
 )
 
-:: Color codes (ANSI)
-set "ESC="
-set "GREEN=%ESC%[92m"
-set "RED=%ESC%[91m"
-set "YELLOW=%ESC%[93m"
-set "CYAN=%ESC%[96m"
-set "WHITE=%ESC%[97m"
-set "RESET=%ESC%[0m"
+:: Color codes (ANSI) - only set if ESC was successfully created
+if defined ESC (
+    set "GREEN=%ESC%[92m"
+    set "RED=%ESC%[91m"
+    set "YELLOW=%ESC%[93m"
+    set "CYAN=%ESC%[96m"
+    set "WHITE=%ESC%[97m"
+    set "RESET=%ESC%[0m"
+) else (
+    set "GREEN="
+    set "RED="
+    set "YELLOW="
+    set "CYAN="
+    set "WHITE="
+    set "RESET="
+)
 
 :: Get script directory
 set "SCRIPT_DIR=%~dp0"
