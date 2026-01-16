@@ -269,8 +269,7 @@ def get_user_accounts() -> List[Dict[str, Any]]:
                             is_admin = username.lower() in admin_list
                             users.append({
                                 "username": username,
-                                "isAdmin": is_admin,
-                                "lastLogin": None
+                                "isAdmin": is_admin
                             })
         except Exception:
             pass
@@ -290,8 +289,7 @@ def get_user_accounts() -> List[Dict[str, Any]]:
                                 is_admin = uid == 0 or uid in [501, 1000]
                                 users.append({
                                     "username": username,
-                                    "isAdmin": is_admin,
-                                    "lastLogin": None
+                                    "isAdmin": is_admin
                                 })
         except Exception:
             pass
