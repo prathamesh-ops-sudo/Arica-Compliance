@@ -4,8 +4,19 @@ import type {
   ControlGap,
   RiskLevelType,
   QuestionnaireCategoryType,
+  ISOComplianceResult,
+  ISOControlFinding,
+  ISOControlThemeType,
+  ControlStatusType,
 } from "@shared/schema";
-import { RiskLevel, QuestionnaireCategory } from "@shared/schema";
+import { 
+  RiskLevel, 
+  QuestionnaireCategory, 
+  ISOControlTheme, 
+  ControlStatus,
+  ComplianceFramework,
+  ISO_27001_CONTROLS,
+} from "@shared/schema";
 
 interface ScoringWeights {
   systemData: {
@@ -303,6 +314,210 @@ function generateSummary(
   return `Critical security deficiencies identified with a compliance score of ${score}%. The organization lacks fundamental security controls and is at significant risk. Immediate action is required to address ${criticalCount} critical gaps. A complete security overhaul is recommended before this environment is used for production workloads or compliance activities.`;
 }
 
+// ISO 27001/27002 Compliance Scoring
+function calculateISOCompliance(audit: Audit): ISOComplianceResult {
+  const controlFindings: ISOControlFinding[] = [];
+  const themeScores = {
+    ORGANIZATIONAL: 0,
+    PEOPLE: 0,
+    PHYSICAL: 0,
+    TECHNOLOGICAL: 0,
+  };
+  const themeTotals = {
+    ORGANIZATIONAL: 0,
+    PEOPLE: 0,
+    PHYSICAL: 0,
+    TECHNOLOGICAL: 0,
+  };
+
+  // Build answer lookup from questionnaire
+  const answerLookup: Record<string, string> = {};
+  if (audit.questionnaire?.answers) {
+    for (const answer of audit.questionnaire.answers) {
+      answerLookup[answer.questionId] = answer.answer;
+    }
+  }
+
+  // Evaluate each ISO control
+  for (const control of ISO_27001_CONTROLS) {
+    let status: ControlStatusType = ControlStatus.NON_COMPLIANT;
+    let evidenceSource: "SYSTEM_DATA" | "QUESTIONNAIRE" | "BOTH" | "NONE" = "NONE";
+    let description = control.description;
+    let recommendation: string | undefined;
+
+    // Check system data evidence
+    let systemDataCompliant = false;
+    if (control.systemDataKey && audit.systemData) {
+      const sd = audit.systemData;
+      switch (control.systemDataKey) {
+        case "firewallEnabled":
+          systemDataCompliant = sd.firewallEnabled === true;
+          if (!systemDataCompliant) recommendation = "Enable host-based firewall protection";
+          break;
+        case "antivirusInstalled":
+          systemDataCompliant = sd.antivirusInstalled === true;
+          if (!systemDataCompliant) recommendation = "Install endpoint protection software";
+          break;
+        case "diskEncryptionEnabled":
+          systemDataCompliant = sd.diskEncryptionEnabled === true;
+          if (!systemDataCompliant) recommendation = "Enable full disk encryption";
+          break;
+        case "userAccounts":
+          const adminRatio = sd.userAccounts.filter(u => u.isAdmin).length / Math.max(sd.userAccounts.length, 1);
+          systemDataCompliant = adminRatio <= 0.3;
+          if (!systemDataCompliant) recommendation = "Reduce privileged access accounts to follow least privilege principle";
+          break;
+        default:
+          systemDataCompliant = true;
+      }
+      if (systemDataCompliant) evidenceSource = "SYSTEM_DATA";
+    }
+
+    // Check questionnaire evidence
+    let questionnaireCompliant = false;
+    let questionnairePartial = false;
+    if (control.questionIds && control.questionIds.length > 0) {
+      const answers = control.questionIds.map(qid => answerLookup[qid]).filter(Boolean);
+      if (answers.length > 0) {
+        const yesCount = answers.filter(a => a === "YES").length;
+        const partialCount = answers.filter(a => a === "PARTIAL").length;
+        const total = answers.length;
+        
+        if (yesCount === total) {
+          questionnaireCompliant = true;
+        } else if (yesCount + partialCount >= total * 0.5) {
+          questionnairePartial = true;
+        }
+        
+        if (questionnaireCompliant || questionnairePartial) {
+          evidenceSource = evidenceSource === "SYSTEM_DATA" ? "BOTH" : "QUESTIONNAIRE";
+        }
+      }
+    }
+
+    // Determine final control status
+    if (control.evidenceType === "SYSTEM_DATA") {
+      status = systemDataCompliant ? ControlStatus.COMPLIANT : ControlStatus.NON_COMPLIANT;
+    } else if (control.evidenceType === "QUESTIONNAIRE") {
+      status = questionnaireCompliant ? ControlStatus.COMPLIANT : 
+               questionnairePartial ? ControlStatus.PARTIAL : ControlStatus.NON_COMPLIANT;
+    } else if (control.evidenceType === "BOTH") {
+      if (systemDataCompliant && questionnaireCompliant) {
+        status = ControlStatus.COMPLIANT;
+      } else if (systemDataCompliant || questionnaireCompliant) {
+        status = ControlStatus.PARTIAL;
+      } else if (questionnairePartial) {
+        status = ControlStatus.PARTIAL;
+      } else {
+        status = ControlStatus.NON_COMPLIANT;
+      }
+    } else {
+      status = ControlStatus.NOT_APPLICABLE;
+    }
+
+    // Calculate theme scores
+    themeTotals[control.theme]++;
+    if (status === ControlStatus.COMPLIANT) {
+      themeScores[control.theme] += 1;
+    } else if (status === ControlStatus.PARTIAL) {
+      themeScores[control.theme] += 0.5;
+    }
+
+    controlFindings.push({
+      controlId: control.id,
+      controlName: control.name,
+      theme: control.theme,
+      status,
+      evidenceSource,
+      description,
+      recommendation: status !== ControlStatus.COMPLIANT ? recommendation : undefined,
+      clauseReference: `ISO 27001:2022 ${control.id}`,
+    });
+  }
+
+  // Calculate final theme percentages
+  const finalThemeScores = {
+    ORGANIZATIONAL: themeTotals.ORGANIZATIONAL > 0 ? Math.round((themeScores.ORGANIZATIONAL / themeTotals.ORGANIZATIONAL) * 100) : 0,
+    PEOPLE: themeTotals.PEOPLE > 0 ? Math.round((themeScores.PEOPLE / themeTotals.PEOPLE) * 100) : 0,
+    PHYSICAL: themeTotals.PHYSICAL > 0 ? Math.round((themeScores.PHYSICAL / themeTotals.PHYSICAL) * 100) : 0,
+    TECHNOLOGICAL: themeTotals.TECHNOLOGICAL > 0 ? Math.round((themeScores.TECHNOLOGICAL / themeTotals.TECHNOLOGICAL) * 100) : 0,
+  };
+
+  // Calculate overall ISO score
+  const totalControls = controlFindings.length;
+  const compliantControls = controlFindings.filter(f => f.status === ControlStatus.COMPLIANT).length;
+  const partialControls = controlFindings.filter(f => f.status === ControlStatus.PARTIAL).length;
+  const nonCompliantControls = controlFindings.filter(f => f.status === ControlStatus.NON_COMPLIANT).length;
+  const notApplicableControls = controlFindings.filter(f => f.status === ControlStatus.NOT_APPLICABLE).length;
+  
+  const applicableControls = totalControls - notApplicableControls;
+  const overallScore = applicableControls > 0 
+    ? Math.round(((compliantControls + partialControls * 0.5) / applicableControls) * 100)
+    : 0;
+
+  // Determine maturity level
+  let maturityLevel: "INITIAL" | "DEVELOPING" | "DEFINED" | "MANAGED" | "OPTIMIZING";
+  if (overallScore >= 90) maturityLevel = "OPTIMIZING";
+  else if (overallScore >= 75) maturityLevel = "MANAGED";
+  else if (overallScore >= 60) maturityLevel = "DEFINED";
+  else if (overallScore >= 40) maturityLevel = "DEVELOPING";
+  else maturityLevel = "INITIAL";
+
+  // Determine certification readiness
+  let certificationReadiness: "READY" | "NEAR_READY" | "NEEDS_WORK" | "NOT_READY";
+  if (overallScore >= 85 && nonCompliantControls === 0) certificationReadiness = "READY";
+  else if (overallScore >= 70) certificationReadiness = "NEAR_READY";
+  else if (overallScore >= 50) certificationReadiness = "NEEDS_WORK";
+  else certificationReadiness = "NOT_READY";
+
+  // Generate ISO-specific recommendations
+  const isoRecommendations: string[] = [];
+  const nonCompliantFindings = controlFindings.filter(f => f.status === ControlStatus.NON_COMPLIANT);
+  
+  // Group by theme for recommendations
+  const themeLabels: Record<string, string> = {
+    ORGANIZATIONAL: "Organizational Controls (A.5)",
+    PEOPLE: "People Controls (A.6)",
+    PHYSICAL: "Physical Controls (A.7)",
+    TECHNOLOGICAL: "Technological Controls (A.8)",
+  };
+
+  for (const [theme, score] of Object.entries(finalThemeScores)) {
+    if (score < 60) {
+      isoRecommendations.push(`Focus on ${themeLabels[theme]} - current compliance: ${score}%`);
+    }
+  }
+
+  for (const finding of nonCompliantFindings.slice(0, 5)) {
+    if (finding.recommendation) {
+      isoRecommendations.push(`${finding.controlId}: ${finding.recommendation}`);
+    }
+  }
+
+  // Generate summary
+  const summary = overallScore >= 80 
+    ? `Strong ISO 27001/27002 compliance posture with ${overallScore}% overall score. ${compliantControls} of ${applicableControls} applicable controls are fully implemented. Organization is ${certificationReadiness === "READY" ? "ready for" : "approaching"} certification.`
+    : overallScore >= 60
+    ? `Moderate ISO 27001/27002 compliance with ${overallScore}% score. ${nonCompliantControls} controls require immediate attention. Focus on ${Object.entries(finalThemeScores).sort(([,a], [,b]) => a - b)[0][0].toLowerCase()} controls to improve readiness.`
+    : `Significant gaps in ISO 27001/27002 compliance (${overallScore}%). ${nonCompliantControls} controls are non-compliant. A structured remediation program is needed before pursuing certification.`;
+
+  return {
+    framework: ComplianceFramework.ISO_27001,
+    overallScore,
+    themeScores: finalThemeScores,
+    maturityLevel,
+    controlFindings,
+    compliantControls,
+    partialControls,
+    nonCompliantControls,
+    notApplicableControls,
+    totalControls,
+    certificationReadiness,
+    recommendations: isoRecommendations.slice(0, 8),
+    summary,
+  };
+}
+
 export function calculateAIScore(audit: Audit): AIScoreResult {
   const systemResult = calculateSystemDataScore(audit);
   const questionnaireResult = calculateQuestionnaireScore(audit);
@@ -333,6 +548,9 @@ export function calculateAIScore(audit: Audit): AIScoreResult {
     questionnaireResult.categoryScores
   );
 
+  // Calculate ISO 27001/27002 compliance
+  const isoCompliance = calculateISOCompliance(audit);
+
   return {
     complianceScore,
     riskLevel,
@@ -342,5 +560,6 @@ export function calculateAIScore(audit: Audit): AIScoreResult {
     recommendations,
     summary,
     scoredAt: new Date().toISOString(),
+    isoCompliance,
   };
 }
