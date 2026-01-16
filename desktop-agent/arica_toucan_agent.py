@@ -116,7 +116,6 @@ def check_antivirus_status() -> Dict[str, Any]:
     """Check antivirus/endpoint protection status."""
     result = {
         "antivirusInstalled": False,
-        "antivirusName": None,
         "antivirusStatus": "Not detected"
     }
     
@@ -176,8 +175,7 @@ def check_antivirus_status() -> Dict[str, Any]:
 def check_disk_encryption() -> Dict[str, Any]:
     """Check disk encryption status."""
     result = {
-        "diskEncryptionEnabled": False,
-        "diskEncryptionMethod": None
+        "diskEncryptionEnabled": False
     }
     
     system = platform.system().lower()
@@ -229,48 +227,102 @@ def get_user_accounts() -> List[Dict[str, Any]]:
     users = []
     system = platform.system().lower()
     
-    # Built-in Windows accounts to exclude
+    # Built-in Windows accounts to exclude (comprehensive list)
     WINDOWS_SYSTEM_ACCOUNTS = {
         'administrator', 'defaultaccount', 'guest', 'wdagutilityaccount',
         'defaultuser0', 'system', 'local service', 'network service',
-        'krbtgt', 'defaultapppool'
+        'krbtgt', 'defaultapppool', 'aspnet', 'iusr', 'iwam',
+        'homegroup', 'mssql', 'mysql', 'postgres', 'oracle',
+        'sshd', 'nt authority', 'everyone', 'authenticated users',
+        'users', 'guests', 'power users', 'backup operators',
+        'replicator', 'remote desktop users', 'network configuration operators',
+        'performance monitor users', 'performance log users', 'distributed com users',
+        'iis_iusrs', 'cryptographic operators', 'event log readers',
+        'certificate service dcom access', 'rdp-tcp', 'console', 'helpassistant'
     }
     
     if system == "windows":
         try:
-            output = subprocess.check_output(
-                ["net", "user"],
-                stderr=subprocess.DEVNULL,
-                timeout=10
-            ).decode()
-            lines = output.split('\n')
-            
-            # Get list of admins for reference
-            admin_list = set()
+            # Use WMIC for more accurate user listing (only actual user accounts)
             try:
-                admin_output = subprocess.check_output(
-                    ["net", "localgroup", "Administrators"],
+                output = subprocess.check_output(
+                    ["wmic", "useraccount", "where", "LocalAccount=True", "get", "Name,Disabled,Status"],
                     stderr=subprocess.DEVNULL,
-                    timeout=10
+                    timeout=15
                 ).decode()
-                for admin_line in admin_output.split('\n'):
-                    admin_line = admin_line.strip()
-                    if admin_line and not admin_line.startswith('-') and not admin_line.startswith('Alias') and not admin_line.startswith('Members') and not admin_line.startswith('Comment') and not admin_line.startswith('The'):
-                        admin_list.add(admin_line.lower())
-            except Exception:
-                pass
-            
-            for line in lines:
-                if line.strip() and not line.startswith('-') and not line.startswith('User') and not line.startswith('The'):
-                    for username in line.split():
-                        username = username.strip()
-                        # Skip empty and system accounts
-                        if username and username.lower() not in WINDOWS_SYSTEM_ACCOUNTS:
+                lines = output.strip().split('\n')[1:]  # Skip header
+                
+                # Get list of admins
+                admin_list = set()
+                try:
+                    admin_output = subprocess.check_output(
+                        ["net", "localgroup", "Administrators"],
+                        stderr=subprocess.DEVNULL,
+                        timeout=10
+                    ).decode()
+                    in_members = False
+                    for admin_line in admin_output.split('\n'):
+                        admin_line = admin_line.strip()
+                        if '----' in admin_line:
+                            in_members = True
+                            continue
+                        if in_members and admin_line and not admin_line.startswith('The command'):
+                            admin_list.add(admin_line.lower())
+                except Exception:
+                    pass
+                
+                for line in lines:
+                    parts = line.strip().split()
+                    if parts:
+                        username = parts[0].strip()
+                        # Check if disabled (FALSE means enabled)
+                        is_disabled = len(parts) > 1 and parts[1].upper() == 'TRUE'
+                        
+                        # Skip system accounts and disabled accounts
+                        if username and username.lower() not in WINDOWS_SYSTEM_ACCOUNTS and not is_disabled:
                             is_admin = username.lower() in admin_list
                             users.append({
                                 "username": username,
                                 "isAdmin": is_admin
                             })
+            except Exception:
+                # Fallback to net user if WMIC fails
+                output = subprocess.check_output(
+                    ["net", "user"],
+                    stderr=subprocess.DEVNULL,
+                    timeout=10
+                ).decode()
+                lines = output.split('\n')
+                
+                # Get list of admins
+                admin_list = set()
+                try:
+                    admin_output = subprocess.check_output(
+                        ["net", "localgroup", "Administrators"],
+                        stderr=subprocess.DEVNULL,
+                        timeout=10
+                    ).decode()
+                    in_members = False
+                    for admin_line in admin_output.split('\n'):
+                        admin_line = admin_line.strip()
+                        if '----' in admin_line:
+                            in_members = True
+                            continue
+                        if in_members and admin_line and not admin_line.startswith('The command'):
+                            admin_list.add(admin_line.lower())
+                except Exception:
+                    pass
+                
+                for line in lines:
+                    if line.strip() and not line.startswith('-') and not line.startswith('User') and not line.startswith('The'):
+                        for username in line.split():
+                            username = username.strip()
+                            if username and username.lower() not in WINDOWS_SYSTEM_ACCOUNTS:
+                                is_admin = username.lower() in admin_list
+                                users.append({
+                                    "username": username,
+                                    "isAdmin": is_admin
+                                })
         except Exception:
             pass
     
@@ -438,6 +490,14 @@ def upload_system_data(server_url: str, audit_id: str, system_data: Dict[str, An
         )
         response.raise_for_status()
         return True
+    except requests.exceptions.HTTPError as e:
+        print(f"\n[!] Failed to upload data: {e}")
+        try:
+            error_details = e.response.json()
+            print(f"    Server response: {json.dumps(error_details, indent=2)}")
+        except:
+            print(f"    Response text: {e.response.text[:500]}")
+        return False
     except Exception as e:
         print(f"\n[!] Failed to upload data: {e}")
         return False
