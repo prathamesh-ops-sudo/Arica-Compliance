@@ -377,7 +377,7 @@ goto :eof
 
 :LoadConfig
 if exist "!CONFIG_FILE!" (
-    for /f "tokens=1,2 delims==" %%a in (!CONFIG_FILE!) do (
+    for /f "usebackq tokens=1,2 delims==" %%a in ("!CONFIG_FILE!") do (
         if "%%a"=="SERVER_URL" set "SERVER_URL=%%b"
     )
 )

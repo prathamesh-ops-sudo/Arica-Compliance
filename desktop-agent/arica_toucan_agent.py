@@ -546,76 +546,85 @@ def print_banner():
 
 
 # ============================================================================
-# QUESTIONNAIRE DEFINITIONS
+# QUESTIONNAIRE DEFINITIONS (Matching ISO 27001/27002 Schema)
 # ============================================================================
 
 QUESTIONNAIRE_DATA = {
-    "accessControl": {
+    "ACCESS_CONTROL": {
         "title": "Access Control",
         "description": "User authentication, authorization, and access management",
         "questions": [
-            {"id": "passwordPolicy", "text": "Do you enforce strong password policies (min 12 chars, complexity, expiry)?"},
-            {"id": "mfaEnabled", "text": "Is multi-factor authentication (MFA) enabled for all users?"},
-            {"id": "accessReviews", "text": "Do you conduct regular access reviews (at least quarterly)?"},
-            {"id": "leastPrivilege", "text": "Is the principle of least privilege applied to user permissions?"},
-            {"id": "accountDeprovisioning", "text": "Are terminated employee accounts disabled within 24 hours?"},
+            {"id": "AC-001", "text": "Do you have a formal access control policy in place?"},
+            {"id": "AC-002", "text": "Are user access rights reviewed at least quarterly?"},
+            {"id": "AC-003", "text": "Is multi-factor authentication enforced for all privileged accounts?"},
+            {"id": "AC-004", "text": "Do you have a process for immediate access revocation upon employee termination?"},
+            {"id": "AC-005", "text": "Are password policies enforced with complexity requirements?"},
         ]
     },
-    "dataProtection": {
-        "title": "Data Protection",
-        "description": "Data encryption, backup, and classification controls",
+    "ASSET_MANAGEMENT": {
+        "title": "Asset Management",
+        "description": "IT asset inventory, classification, and lifecycle management",
         "questions": [
-            {"id": "dataClassification", "text": "Is there a formal data classification policy in place?"},
-            {"id": "encryptionAtRest", "text": "Is sensitive data encrypted at rest?"},
-            {"id": "encryptionInTransit", "text": "Is data encrypted in transit (TLS/HTTPS)?"},
-            {"id": "backupProcedures", "text": "Are regular backups performed and tested for recovery?"},
-            {"id": "dataRetention", "text": "Is there a defined data retention and disposal policy?"},
+            {"id": "AM-001", "text": "Do you maintain an up-to-date inventory of all IT assets?"},
+            {"id": "AM-002", "text": "Are all assets classified according to sensitivity levels?"},
+            {"id": "AM-003", "text": "Is there a formal process for asset disposal and data sanitization?"},
+            {"id": "AM-004", "text": "Are mobile devices and removable media controlled and encrypted?"},
+            {"id": "AM-005", "text": "Do you track software licenses and ensure compliance?"},
         ]
     },
-    "incidentResponse": {
+    "RISK_MANAGEMENT": {
+        "title": "Risk Management",
+        "description": "Risk assessment, treatment, and vendor management",
+        "questions": [
+            {"id": "RM-001", "text": "Do you conduct formal risk assessments at least annually?"},
+            {"id": "RM-002", "text": "Is there a risk register maintained and regularly updated?"},
+            {"id": "RM-003", "text": "Are risk treatment plans documented and tracked?"},
+            {"id": "RM-004", "text": "Do you have a vendor risk management program?"},
+            {"id": "RM-005", "text": "Are security metrics reported to executive management?"},
+        ]
+    },
+    "INCIDENT_RESPONSE": {
         "title": "Incident Response",
         "description": "Security incident detection, response, and reporting",
         "questions": [
-            {"id": "incidentPlan", "text": "Is there a documented incident response plan?"},
-            {"id": "incidentTeam", "text": "Is there a designated incident response team?"},
-            {"id": "incidentDetection", "text": "Are security monitoring and alerting systems in place?"},
-            {"id": "incidentReporting", "text": "Are employees trained to report security incidents?"},
-            {"id": "postIncidentReview", "text": "Are post-incident reviews conducted to improve processes?"},
+            {"id": "IR-001", "text": "Do you have a documented incident response plan?"},
+            {"id": "IR-002", "text": "Is the incident response team trained and tested regularly?"},
+            {"id": "IR-003", "text": "Do you have 24/7 security monitoring capabilities?"},
+            {"id": "IR-004", "text": "Are security incidents logged and analyzed for trends?"},
+            {"id": "IR-005", "text": "Do you have breach notification procedures in place?"},
         ]
     },
-    "securityPolicies": {
-        "title": "Security Policies",
-        "description": "Documentation, governance, and compliance monitoring",
+    "BUSINESS_CONTINUITY": {
+        "title": "Business Continuity",
+        "description": "Business continuity planning and disaster recovery",
         "questions": [
-            {"id": "securityPolicy", "text": "Is there a comprehensive information security policy?"},
-            {"id": "policyReview", "text": "Are security policies reviewed and updated annually?"},
-            {"id": "riskAssessment", "text": "Are regular risk assessments conducted?"},
-            {"id": "vendorManagement", "text": "Is there a third-party/vendor security assessment process?"},
-            {"id": "complianceMonitoring", "text": "Is there ongoing compliance monitoring and reporting?"},
-        ]
-    },
-    "trainingAwareness": {
-        "title": "Training & Awareness",
-        "description": "Security training and awareness programs",
-        "questions": [
-            {"id": "securityTraining", "text": "Do all employees complete annual security awareness training?"},
-            {"id": "phishingAwareness", "text": "Are phishing simulation exercises conducted regularly?"},
-            {"id": "onboardingTraining", "text": "Is security training part of new employee onboarding?"},
-            {"id": "roleBasedTraining", "text": "Is role-specific security training provided (e.g., developers, admins)?"},
-            {"id": "trainingRecords", "text": "Are training completion records maintained?"},
+            {"id": "BC-001", "text": "Do you have a documented business continuity plan?"},
+            {"id": "BC-002", "text": "Are critical systems backed up with defined RPO/RTO targets?"},
+            {"id": "BC-003", "text": "Do you test disaster recovery procedures at least annually?"},
+            {"id": "BC-004", "text": "Is there an alternate processing site or cloud-based failover?"},
+            {"id": "BC-005", "text": "Are business impact analyses conducted and updated regularly?"},
         ]
     }
 }
 
 
-def submit_questionnaire(server_url: str, audit_id: str, responses: Dict[str, Any]) -> bool:
-    """Submit questionnaire responses to the server."""
+def submit_questionnaire(server_url: str, audit_id: str, answers: List[Dict[str, Any]]) -> bool:
+    """Submit questionnaire responses to the server.
+    
+    Args:
+        server_url: The server URL
+        audit_id: The audit ID
+        answers: List of answer objects with questionId, category, question, answer, notes
+    """
     try:
         response = requests.post(
             f"{server_url}/api/audit/submit-questionnaire",
             json={
                 "auditId": audit_id,
-                "responses": responses
+                "responses": {
+                    "answers": answers,
+                    "submittedAt": datetime.now().isoformat()
+                }
             },
             headers={"Content-Type": "application/json"},
             timeout=60
@@ -860,12 +869,23 @@ if HAS_TKINTER:
             if not self._validate_responses():
                 return
                 
-            # Convert StringVars to actual values
-            response_data = {}
+            # Build answer list in the correct format
+            answers = []
             for category_key, questions in self.responses.items():
-                response_data[category_key] = {}
-                for q_id, var in questions.items():
-                    response_data[category_key][q_id] = var.get()
+                category_data = QUESTIONNAIRE_DATA[category_key]
+                for q_data in category_data["questions"]:
+                    q_id = q_data["id"]
+                    if q_id in questions:
+                        answer_value = questions[q_id].get()
+                        # Convert N/A to NA for API compatibility
+                        if answer_value == "N/A":
+                            answer_value = "NA"
+                        answers.append({
+                            "questionId": q_id,
+                            "category": category_key,
+                            "question": q_data["text"],
+                            "answer": answer_value
+                        })
             
             # Show confirmation
             if not messagebox.askyesno(
@@ -877,7 +897,7 @@ if HAS_TKINTER:
                 
             # Submit to server
             print("\n[*] Submitting questionnaire responses...")
-            success = submit_questionnaire(self.server_url, self.audit_id, response_data)
+            success = submit_questionnaire(self.server_url, self.audit_id, answers)
             
             if success:
                 self.submitted = True
@@ -1036,11 +1056,12 @@ def main():
             print("\n  Your responses have been recorded.")
             print("  Contact the provider to unlock your compliance report.")
             print("\n" + "=" * 60)
+            input("\nPress Enter to exit...")
+            sys.exit(0)
         else:
             print("\n[!] Questionnaire was not completed.")
-        
-        input("\nPress Enter to exit...")
-        return
+            input("\nPress Enter to exit...")
+            sys.exit(1)
     
     # Handle system scan mode
     if args.mode == "system":
@@ -1055,11 +1076,12 @@ def main():
             print("\n  Contact the provider to unlock your report")
             print("  and receive your AI-powered compliance analysis.")
             print("\n" + "=" * 60)
+            input("\nPress Enter to exit...")
+            sys.exit(0)
         else:
             print("\n[!] System scan failed.")
-        
-        input("\nPress Enter to exit...")
-        return
+            input("\nPress Enter to exit...")
+            sys.exit(1)
     
     # Handle full audit mode (system + questionnaire)
     if args.mode == "full":
@@ -1087,10 +1109,14 @@ def main():
                 print("\n  Contact the provider to unlock your report")
                 print("  and receive your AI-powered compliance analysis.")
                 print("\n" + "=" * 60)
+                input("\nPress Enter to exit...")
+                sys.exit(0)
             else:
                 print("\n[!] Questionnaire was not completed.")
                 print(f"    Your system data was uploaded (Audit ID: {audit_id[:8].upper()})")
                 print("    You can complete the questionnaire later.")
+                input("\nPress Enter to exit...")
+                sys.exit(1)
         else:
             print("\n[!] Tkinter not available. Questionnaire skipped.")
             print(f"    Your system data was uploaded (Audit ID: {audit_id[:8].upper()})")
@@ -1099,8 +1125,8 @@ def main():
             print("\n  SYSTEM SCAN COMPLETED!")
             print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
             print("\n" + "=" * 60)
-        
-        input("\nPress Enter to exit...")
+            input("\nPress Enter to exit...")
+            sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -93,10 +93,38 @@ npm run dev
 ```
 
 ### Desktop Agent
+
+The desktop agent includes an enhanced batch launcher with menu system and a graphical Tkinter questionnaire.
+
+**Running on Windows:**
 ```bash
 cd desktop-agent
-pip install requests psutil
-python arica_toucan_agent.py --server http://localhost:5000
+AricaToucanAgent.bat
+```
+
+**Menu Options:**
+1. Run Full Audit (System Scan + Questionnaire GUI)
+2. Run System Scan Only
+3. Run Questionnaire Only (requires Audit ID)
+4. Dry Run (Test without uploading)
+5. Configure Server URL
+6. Install/Verify Dependencies
+7. View Help
+8. Exit
+
+**Command-line modes:**
+```bash
+# Full audit (system scan + questionnaire GUI)
+python arica_toucan_agent.py --server https://your-server.com --mode full
+
+# System scan only
+python arica_toucan_agent.py --server https://your-server.com --mode system
+
+# Questionnaire only (for existing audit)
+python arica_toucan_agent.py --server https://your-server.com --mode questionnaire --audit-id ABC12345
+
+# Dry run (test without uploading)
+python arica_toucan_agent.py --dry-run
 ```
 
 ### Building Desktop EXE
@@ -104,6 +132,14 @@ python arica_toucan_agent.py --server http://localhost:5000
 pip install pyinstaller
 pyinstaller --onefile --name AricaToucanAgent arica_toucan_agent.py
 ```
+
+### Questionnaire Categories
+The graphical questionnaire covers 5 ISO 27001/27002 compliance categories:
+- **Access Control** (AC-001 to AC-005)
+- **Asset Management** (AM-001 to AM-005)
+- **Risk Management** (RM-001 to RM-005)
+- **Incident Response** (IR-001 to IR-005)
+- **Business Continuity** (BC-001 to BC-005)
 
 ## AI Scoring Logic
 
