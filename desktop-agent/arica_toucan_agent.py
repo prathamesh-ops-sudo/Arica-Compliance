@@ -7,11 +7,18 @@ This script collects system information for compliance auditing.
 It gathers OS details, security status, and user access controls,
 then submits the data to the Arica Toucan API.
 
+Features:
+    - System data collection (firewall, antivirus, encryption, users)
+    - Graphical compliance questionnaire (Tkinter GUI)
+    - ISO 27001/27002 compliance scoring support
+
 Requirements:
     pip install requests psutil
 
 Usage:
-    python arica_toucan_agent.py --server https://your-arica-toucan-server.com
+    python arica_toucan_agent.py --server https://your-server.com --mode full
+    python arica_toucan_agent.py --server https://your-server.com --mode system
+    python arica_toucan_agent.py --server https://your-server.com --mode questionnaire --audit-id ABC123
 
 To build as EXE (Windows):
     pip install pyinstaller
@@ -38,6 +45,14 @@ try:
 except ImportError:
     psutil = None
     print("WARNING: psutil not available. Some features will be limited.")
+
+try:
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+    HAS_TKINTER = True
+except ImportError:
+    HAS_TKINTER = False
+    print("WARNING: Tkinter not available. GUI questionnaire will be disabled.")
 
 
 def get_os_info() -> Dict[str, str]:
@@ -530,26 +545,378 @@ def print_banner():
     print(banner)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Arica Toucan Desktop Audit Agent"
-    )
-    parser.add_argument(
-        "--server",
-        required=True,
-        help="Server URL (e.g., https://your-arica-toucan-server.com)"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Collect data without uploading (for testing)"
-    )
+# ============================================================================
+# QUESTIONNAIRE DEFINITIONS
+# ============================================================================
+
+QUESTIONNAIRE_DATA = {
+    "accessControl": {
+        "title": "Access Control",
+        "description": "User authentication, authorization, and access management",
+        "questions": [
+            {"id": "passwordPolicy", "text": "Do you enforce strong password policies (min 12 chars, complexity, expiry)?"},
+            {"id": "mfaEnabled", "text": "Is multi-factor authentication (MFA) enabled for all users?"},
+            {"id": "accessReviews", "text": "Do you conduct regular access reviews (at least quarterly)?"},
+            {"id": "leastPrivilege", "text": "Is the principle of least privilege applied to user permissions?"},
+            {"id": "accountDeprovisioning", "text": "Are terminated employee accounts disabled within 24 hours?"},
+        ]
+    },
+    "dataProtection": {
+        "title": "Data Protection",
+        "description": "Data encryption, backup, and classification controls",
+        "questions": [
+            {"id": "dataClassification", "text": "Is there a formal data classification policy in place?"},
+            {"id": "encryptionAtRest", "text": "Is sensitive data encrypted at rest?"},
+            {"id": "encryptionInTransit", "text": "Is data encrypted in transit (TLS/HTTPS)?"},
+            {"id": "backupProcedures", "text": "Are regular backups performed and tested for recovery?"},
+            {"id": "dataRetention", "text": "Is there a defined data retention and disposal policy?"},
+        ]
+    },
+    "incidentResponse": {
+        "title": "Incident Response",
+        "description": "Security incident detection, response, and reporting",
+        "questions": [
+            {"id": "incidentPlan", "text": "Is there a documented incident response plan?"},
+            {"id": "incidentTeam", "text": "Is there a designated incident response team?"},
+            {"id": "incidentDetection", "text": "Are security monitoring and alerting systems in place?"},
+            {"id": "incidentReporting", "text": "Are employees trained to report security incidents?"},
+            {"id": "postIncidentReview", "text": "Are post-incident reviews conducted to improve processes?"},
+        ]
+    },
+    "securityPolicies": {
+        "title": "Security Policies",
+        "description": "Documentation, governance, and compliance monitoring",
+        "questions": [
+            {"id": "securityPolicy", "text": "Is there a comprehensive information security policy?"},
+            {"id": "policyReview", "text": "Are security policies reviewed and updated annually?"},
+            {"id": "riskAssessment", "text": "Are regular risk assessments conducted?"},
+            {"id": "vendorManagement", "text": "Is there a third-party/vendor security assessment process?"},
+            {"id": "complianceMonitoring", "text": "Is there ongoing compliance monitoring and reporting?"},
+        ]
+    },
+    "trainingAwareness": {
+        "title": "Training & Awareness",
+        "description": "Security training and awareness programs",
+        "questions": [
+            {"id": "securityTraining", "text": "Do all employees complete annual security awareness training?"},
+            {"id": "phishingAwareness", "text": "Are phishing simulation exercises conducted regularly?"},
+            {"id": "onboardingTraining", "text": "Is security training part of new employee onboarding?"},
+            {"id": "roleBasedTraining", "text": "Is role-specific security training provided (e.g., developers, admins)?"},
+            {"id": "trainingRecords", "text": "Are training completion records maintained?"},
+        ]
+    }
+}
+
+
+def submit_questionnaire(server_url: str, audit_id: str, responses: Dict[str, Any]) -> bool:
+    """Submit questionnaire responses to the server."""
+    try:
+        response = requests.post(
+            f"{server_url}/api/audit/submit-questionnaire",
+            json={
+                "auditId": audit_id,
+                "responses": responses
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=60
+        )
+        response.raise_for_status()
+        return True
+    except requests.exceptions.HTTPError as e:
+        print(f"\n[!] Failed to submit questionnaire: {e}")
+        try:
+            error_details = e.response.json()
+            print(f"    Server response: {json.dumps(error_details, indent=2)}")
+        except:
+            print(f"    Response text: {e.response.text[:500]}")
+        return False
+    except Exception as e:
+        print(f"\n[!] Failed to submit questionnaire: {e}")
+        return False
+
+
+# ============================================================================
+# TKINTER QUESTIONNAIRE GUI
+# ============================================================================
+
+if HAS_TKINTER:
+    class QuestionnaireGUI:
+        """Graphical questionnaire for compliance assessment."""
+        
+        def __init__(self, server_url: str, audit_id: str):
+            self.server_url = server_url
+            self.audit_id = audit_id
+            self.responses = {}
+            self.submitted = False
+            
+            self.root = tk.Tk()
+            self.root.title(f"Arica Toucan - Compliance Questionnaire - Audit: {audit_id[:8].upper()}")
+            self.root.geometry("900x700")
+            self.root.configure(bg="#0B1220")
+            
+            # Style configuration
+            self.style = ttk.Style()
+            self.style.theme_use("clam")
+            
+            # Configure colors
+            self.style.configure("TNotebook", background="#0B1220", borderwidth=0)
+            self.style.configure("TNotebook.Tab", background="#1E293B", foreground="#E2E8F0",
+                                padding=[20, 10], font=("Segoe UI", 10))
+            self.style.map("TNotebook.Tab", background=[("selected", "#3B82F6")])
+            
+            self.style.configure("TFrame", background="#0B1220")
+            self.style.configure("TLabel", background="#0B1220", foreground="#E2E8F0",
+                                font=("Segoe UI", 10))
+            self.style.configure("Header.TLabel", font=("Segoe UI", 14, "bold"))
+            self.style.configure("TRadiobutton", background="#0B1220", foreground="#E2E8F0",
+                                font=("Segoe UI", 10))
+            
+            self._create_widgets()
+            
+        def _create_widgets(self):
+            """Create all GUI widgets."""
+            # Header
+            header_frame = ttk.Frame(self.root)
+            header_frame.pack(fill="x", padx=20, pady=15)
+            
+            title_label = ttk.Label(
+                header_frame,
+                text="ISO 27001/27002 Compliance Questionnaire",
+                style="Header.TLabel"
+            )
+            title_label.pack(side="left")
+            
+            audit_label = ttk.Label(
+                header_frame,
+                text=f"Audit ID: {self.audit_id[:8].upper()}",
+                foreground="#3B82F6"
+            )
+            audit_label.pack(side="right")
+            
+            # Instructions
+            instructions = ttk.Label(
+                self.root,
+                text="Please answer the following questions about your organization's security controls.\n"
+                     "Select YES, PARTIAL, NO, or N/A for each question.",
+                foreground="#94A3B8"
+            )
+            instructions.pack(padx=20, pady=(0, 10))
+            
+            # Create notebook (tabs)
+            self.notebook = ttk.Notebook(self.root)
+            self.notebook.pack(fill="both", expand=True, padx=20, pady=10)
+            
+            # Create tabs for each category
+            for category_key, category_data in QUESTIONNAIRE_DATA.items():
+                self._create_category_tab(category_key, category_data)
+            
+            # Bottom frame with progress and submit button
+            bottom_frame = ttk.Frame(self.root)
+            bottom_frame.pack(fill="x", padx=20, pady=15)
+            
+            # Progress label
+            self.progress_label = ttk.Label(
+                bottom_frame,
+                text="Progress: 0 / 25 questions answered",
+                foreground="#94A3B8"
+            )
+            self.progress_label.pack(side="left")
+            
+            # Submit button
+            submit_btn = tk.Button(
+                bottom_frame,
+                text="Submit Questionnaire",
+                command=self._submit,
+                bg="#3B82F6",
+                fg="white",
+                font=("Segoe UI", 11, "bold"),
+                padx=30,
+                pady=10,
+                relief="flat",
+                cursor="hand2"
+            )
+            submit_btn.pack(side="right")
+            
+        def _create_category_tab(self, category_key: str, category_data: Dict):
+            """Create a tab for a questionnaire category."""
+            # Create frame for this category
+            frame = ttk.Frame(self.notebook)
+            self.notebook.add(frame, text=category_data["title"])
+            
+            # Category description
+            desc_label = ttk.Label(
+                frame,
+                text=category_data["description"],
+                foreground="#94A3B8"
+            )
+            desc_label.pack(padx=20, pady=15, anchor="w")
+            
+            # Create scrollable frame for questions
+            canvas = tk.Canvas(frame, bg="#0B1220", highlightthickness=0)
+            scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+            scrollable_frame = ttk.Frame(canvas)
+            
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+            
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+            
+            canvas.pack(side="left", fill="both", expand=True, padx=20)
+            scrollbar.pack(side="right", fill="y")
+            
+            # Initialize category responses
+            if category_key not in self.responses:
+                self.responses[category_key] = {}
+            
+            # Create questions
+            for i, question in enumerate(category_data["questions"]):
+                self._create_question(scrollable_frame, category_key, question, i)
+                
+        def _create_question(self, parent: ttk.Frame, category_key: str, question: Dict, index: int):
+            """Create a single question with radio buttons."""
+            # Question frame
+            q_frame = ttk.Frame(parent)
+            q_frame.pack(fill="x", pady=10, padx=10)
+            
+            # Question number and text
+            q_label = ttk.Label(
+                q_frame,
+                text=f"{index + 1}. {question['text']}",
+                wraplength=700
+            )
+            q_label.pack(anchor="w")
+            
+            # Radio buttons frame
+            radio_frame = ttk.Frame(q_frame)
+            radio_frame.pack(anchor="w", pady=5, padx=20)
+            
+            # Create variable for this question
+            var = tk.StringVar(value="")
+            
+            # Radio button options
+            options = [
+                ("YES", "#22C55E"),
+                ("PARTIAL", "#F59E0B"),
+                ("NO", "#EF4444"),
+                ("N/A", "#6B7280")
+            ]
+            
+            for opt_text, color in options:
+                rb = tk.Radiobutton(
+                    radio_frame,
+                    text=opt_text,
+                    variable=var,
+                    value=opt_text,
+                    bg="#0B1220",
+                    fg="#E2E8F0",
+                    selectcolor="#1E293B",
+                    activebackground="#0B1220",
+                    activeforeground=color,
+                    font=("Segoe UI", 10),
+                    command=self._update_progress
+                )
+                rb.pack(side="left", padx=15)
+            
+            # Store reference to variable
+            self.responses[category_key][question["id"]] = var
+            
+        def _update_progress(self):
+            """Update the progress indicator."""
+            answered = 0
+            total = 0
+            
+            for category_key, questions in self.responses.items():
+                for q_id, var in questions.items():
+                    total += 1
+                    if var.get():
+                        answered += 1
+                        
+            self.progress_label.config(text=f"Progress: {answered} / {total} questions answered")
+            
+        def _validate_responses(self) -> bool:
+            """Check if all questions have been answered."""
+            unanswered = []
+            
+            for category_key, questions in self.responses.items():
+                category_title = QUESTIONNAIRE_DATA[category_key]["title"]
+                for q_id, var in questions.items():
+                    if not var.get():
+                        unanswered.append(f"{category_title}: {q_id}")
+                        
+            if unanswered:
+                messagebox.showwarning(
+                    "Incomplete Questionnaire",
+                    f"Please answer all questions before submitting.\n\n"
+                    f"Unanswered questions: {len(unanswered)}"
+                )
+                return False
+            return True
+            
+        def _submit(self):
+            """Submit the questionnaire responses."""
+            if not self._validate_responses():
+                return
+                
+            # Convert StringVars to actual values
+            response_data = {}
+            for category_key, questions in self.responses.items():
+                response_data[category_key] = {}
+                for q_id, var in questions.items():
+                    response_data[category_key][q_id] = var.get()
+            
+            # Show confirmation
+            if not messagebox.askyesno(
+                "Confirm Submission",
+                "Are you ready to submit your questionnaire responses?\n\n"
+                "This will be used for your ISO 27001/27002 compliance scoring."
+            ):
+                return
+                
+            # Submit to server
+            print("\n[*] Submitting questionnaire responses...")
+            success = submit_questionnaire(self.server_url, self.audit_id, response_data)
+            
+            if success:
+                self.submitted = True
+                messagebox.showinfo(
+                    "Success",
+                    f"Questionnaire submitted successfully!\n\n"
+                    f"Audit ID: {self.audit_id[:8].upper()}\n\n"
+                    f"Your responses have been recorded and will be used\n"
+                    f"in combination with your system scan data for\n"
+                    f"AI-powered compliance scoring."
+                )
+                self.root.destroy()
+            else:
+                messagebox.showerror(
+                    "Submission Failed",
+                    "Failed to submit questionnaire.\n\n"
+                    "Please check your internet connection and try again."
+                )
+                
+        def run(self) -> bool:
+            """Run the questionnaire GUI."""
+            self.root.mainloop()
+            return self.submitted
+
+
+def run_questionnaire_only(server_url: str, audit_id: str) -> bool:
+    """Run only the questionnaire GUI for an existing audit."""
+    if not HAS_TKINTER:
+        print("\n[!] Tkinter is not available. Cannot run graphical questionnaire.")
+        print("    Please install Tkinter or use the web questionnaire.")
+        return False
     
-    args = parser.parse_args()
-    server_url = args.server.rstrip("/")
-    
-    print_banner()
-    
+    print(f"\n[*] Launching questionnaire for Audit ID: {audit_id[:8].upper()}")
+    gui = QuestionnaireGUI(server_url, audit_id)
+    return gui.run()
+
+
+def run_system_scan(server_url: str, dry_run: bool = False) -> Optional[str]:
+    """Run system scan and upload data. Returns audit_id on success."""
     system_data = collect_system_data()
     
     print("\n[*] System data collected successfully!")
@@ -559,26 +926,30 @@ def main():
     print(f"    Disk Encryption: {'Enabled' if system_data['diskEncryptionEnabled'] else 'Disabled'}")
     print(f"    User Accounts: {len(system_data['userAccounts'])}")
     
-    if args.dry_run:
+    # Print detected user accounts for transparency
+    if system_data['userAccounts']:
+        print("\n    Detected accounts:")
+        for user in system_data['userAccounts']:
+            admin_status = " (Admin)" if user.get('isAdmin') else ""
+            print(f"      - {user['username']}{admin_status}")
+    
+    if dry_run:
         print("\n[*] Dry run mode - data not uploaded")
         print("\nCollected data:")
         print(json.dumps(system_data, indent=2))
-        return
+        return None
     
     print(f"\n[*] Connecting to server: {server_url}")
     
-    # Test connectivity before attempting API calls
     if not test_connectivity(server_url):
-        input("\nPress Enter to exit...")
-        sys.exit(1)
+        return None
     
     print("[*] Creating audit record...")
     audit_id = create_audit(server_url)
     
     if not audit_id:
         print("\n[!] Failed to create audit. Please check server connection.")
-        input("\nPress Enter to exit...")
-        sys.exit(1)
+        return None
     
     print(f"[*] Audit ID: {audit_id[:8].upper()}")
     
@@ -586,19 +957,150 @@ def main():
     success = upload_system_data(server_url, audit_id, system_data)
     
     if success:
-        print("\n" + "=" * 60)
-        print("\n  AUDIT COMPLETED SUCCESSFULLY!")
-        print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
-        print("\n  IMPORTANT: Save this ID!")
-        print("  You will need it to access your compliance report.")
-        print("\n  Contact the provider to unlock your report")
-        print("  and receive your AI-powered compliance analysis.")
-        print("\n" + "=" * 60)
+        print("\n[+] System data uploaded successfully!")
+        return audit_id
     else:
         print("\n[!] Failed to upload system data.")
-        print("    Please contact support with your Audit ID.")
+        return None
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Arica Toucan Desktop Audit Agent"
+    )
+    parser.add_argument(
+        "--server",
+        help="Server URL (e.g., https://your-arica-toucan-server.com)"
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["full", "system", "questionnaire"],
+        default="full",
+        help="Audit mode: full (system+questionnaire), system (scan only), questionnaire (GUI only)"
+    )
+    parser.add_argument(
+        "--audit-id",
+        help="Audit ID (required for questionnaire-only mode)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Collect data without uploading (for testing)"
+    )
     
-    input("\nPress Enter to exit...")
+    args = parser.parse_args()
+    
+    print_banner()
+    
+    # Handle dry-run mode (no server required)
+    if args.dry_run:
+        system_data = collect_system_data()
+        
+        print("\n[*] System data collected successfully!")
+        print(f"    OS: {system_data['osName']} ({system_data['osVersion']})")
+        print(f"    Firewall: {'Enabled' if system_data['firewallEnabled'] else 'Disabled'}")
+        print(f"    Antivirus: {system_data.get('antivirusName', 'Not detected')}")
+        print(f"    Disk Encryption: {'Enabled' if system_data['diskEncryptionEnabled'] else 'Disabled'}")
+        print(f"    User Accounts: {len(system_data['userAccounts'])}")
+        
+        if system_data['userAccounts']:
+            print("\n    Detected accounts:")
+            for user in system_data['userAccounts']:
+                admin_status = " (Admin)" if user.get('isAdmin') else ""
+                print(f"      - {user['username']}{admin_status}")
+        
+        print("\n[*] Dry run mode - data not uploaded")
+        print("\nCollected data:")
+        print(json.dumps(system_data, indent=2))
+        input("\nPress Enter to exit...")
+        return
+    
+    # Validate server URL
+    if not args.server:
+        print("[!] Error: --server is required (unless using --dry-run)")
+        sys.exit(1)
+    
+    server_url = args.server.rstrip("/")
+    
+    # Handle questionnaire-only mode
+    if args.mode == "questionnaire":
+        if not args.audit_id:
+            print("[!] Error: --audit-id is required for questionnaire mode")
+            sys.exit(1)
+        
+        success = run_questionnaire_only(server_url, args.audit_id)
+        if success:
+            print("\n" + "=" * 60)
+            print("\n  QUESTIONNAIRE COMPLETED SUCCESSFULLY!")
+            print(f"\n  Audit ID: {args.audit_id[:8].upper()}")
+            print("\n  Your responses have been recorded.")
+            print("  Contact the provider to unlock your compliance report.")
+            print("\n" + "=" * 60)
+        else:
+            print("\n[!] Questionnaire was not completed.")
+        
+        input("\nPress Enter to exit...")
+        return
+    
+    # Handle system scan mode
+    if args.mode == "system":
+        audit_id = run_system_scan(server_url)
+        
+        if audit_id:
+            print("\n" + "=" * 60)
+            print("\n  SYSTEM SCAN COMPLETED SUCCESSFULLY!")
+            print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
+            print("\n  IMPORTANT: Save this ID!")
+            print("  You can complete the questionnaire later using this ID.")
+            print("\n  Contact the provider to unlock your report")
+            print("  and receive your AI-powered compliance analysis.")
+            print("\n" + "=" * 60)
+        else:
+            print("\n[!] System scan failed.")
+        
+        input("\nPress Enter to exit...")
+        return
+    
+    # Handle full audit mode (system + questionnaire)
+    if args.mode == "full":
+        audit_id = run_system_scan(server_url)
+        
+        if not audit_id:
+            print("\n[!] System scan failed. Cannot proceed with questionnaire.")
+            input("\nPress Enter to exit...")
+            sys.exit(1)
+        
+        # Launch questionnaire GUI
+        if HAS_TKINTER:
+            print("\n[*] Launching compliance questionnaire...")
+            print("    A new window will open. Please complete all questions.")
+            
+            gui = QuestionnaireGUI(server_url, audit_id)
+            questionnaire_success = gui.run()
+            
+            if questionnaire_success:
+                print("\n" + "=" * 60)
+                print("\n  FULL AUDIT COMPLETED SUCCESSFULLY!")
+                print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
+                print("\n  IMPORTANT: Save this ID!")
+                print("  Both system data and questionnaire have been submitted.")
+                print("\n  Contact the provider to unlock your report")
+                print("  and receive your AI-powered compliance analysis.")
+                print("\n" + "=" * 60)
+            else:
+                print("\n[!] Questionnaire was not completed.")
+                print(f"    Your system data was uploaded (Audit ID: {audit_id[:8].upper()})")
+                print("    You can complete the questionnaire later.")
+        else:
+            print("\n[!] Tkinter not available. Questionnaire skipped.")
+            print(f"    Your system data was uploaded (Audit ID: {audit_id[:8].upper()})")
+            print("    Complete the questionnaire via the web interface.")
+            print("\n" + "=" * 60)
+            print("\n  SYSTEM SCAN COMPLETED!")
+            print(f"\n  Your Audit ID is: {audit_id[:8].upper()}")
+            print("\n" + "=" * 60)
+        
+        input("\nPress Enter to exit...")
 
 
 if __name__ == "__main__":
